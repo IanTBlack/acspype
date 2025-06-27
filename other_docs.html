@@ -1,0 +1,1070 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processing and QAQC &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="acspype code" href="acspype.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acspype.html">acspype code</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Processing and QAQC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#recommended-serial-acquisition-steps">Recommended Serial Acquisition Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommended-processing-steps">Recommended Processing Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Recommended QAQC Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#recommended-naming-conventions">Recommended Naming Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#acs-device-file-variables-and-functions">ACS Device File Variables and Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acs-tscor-variables">ACS TSCor Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acs-output-and-processed-coordinates">ACS Output and Processed Coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acs-output-and-processed-variables">ACS Output and Processed Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ancillary-variables">Ancillary Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#reference-material">Reference Material</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#manuals">Manuals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#literature">Literature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#software">Software</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Processing and QAQC</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/other_docs.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="processing-and-qaqc">
+<h1>Processing and QAQC<a class="headerlink" href="#processing-and-qaqc" title="Link to this heading"></a></h1>
+<section id="recommended-serial-acquisition-steps">
+<h2>Recommended Serial Acquisition Steps<a class="headerlink" href="#recommended-serial-acquisition-steps" title="Link to this heading"></a></h2>
+<p>The ACS communicates over RS232 at 115200-8-N-1.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Step</strong></p></th>
+<th class="head"><p><strong>Step Description</strong></p></th>
+<th class="head"><p><strong>Notes</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0.0</p></td>
+<td><p>Find Packet</p></td>
+<td><p>Read the serial stream and parse out a full ACS packet.</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.1</p></td>
+<td><p>Split/Parse Packet</p></td>
+<td><p>Split a packet into its raw constituents as defined by the <a class="reference external" href="https://www.seabird.com/asset-get.download.jsa?id=69833852764">ACS manual</a>. (e.g. record_length, a_signal, raw_internal_temperature, etc).</p></td>
+</tr>
+<tr class="row-even"><td><p>0.2</p></td>
+<td><p>Run Syntax Test</p></td>
+<td><p>Verify that the packet length matches the record length and verify the checksum.</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.3</p></td>
+<td><p>Run Gap Test</p></td>
+<td><p>Check the assigned packet timestamp and the serial port buffer for pile up.</p></td>
+</tr>
+<tr class="row-even"><td><p>0.4</p></td>
+<td><p>Import ACS Device File</p></td>
+<td><p>The serial number from the parsed packet can be used to automatically identify a corresponding device file.</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.5</p></td>
+<td><p>Calibrate Packet</p></td>
+<td><p>Calibrate the packet using the device file to produce products in engineering units (e.g. a_m, internal_temperature)</p></td>
+</tr>
+<tr class="row-even"><td><p>0.6</p></td>
+<td><p>Import TSCor Data</p></td>
+<td><p>TS-correction does take time to perform each loop, but can be done in a single thread.</p></td>
+</tr>
+<tr class="row-odd"><td><p>0.7</p></td>
+<td><p>TS Correct Packet</p></td>
+<td><p>OPTIONAL: Apply TS correction to data in the packet, if ancillary temperature and salinity are available. (e.g. a_mts)</p></td>
+</tr>
+<tr class="row-even"><td><p>0.8</p></td>
+<td><p>Run Additional QAQC Tests</p></td>
+<td><p>OPTIONAL: Run elapsed time test, internal temperature test, and Inf Nan Test on uncorrected data. These test can probably be done during data acquisition on a single thread.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="recommended-processing-steps">
+<h2>Recommended Processing Steps<a class="headerlink" href="#recommended-processing-steps" title="Link to this heading"></a></h2>
+<p>Note: Many of the steps in the table below are described further in the Sea-Bird Scientific <a class="reference external" href="https://www.seabird.com/asset-get.download.jsa?id=69833852764">ACS Protocol Document (Rev Q)</a>.</p>
+<p><a class="reference external" href="https://pypi.org/project/gsw/">GSW</a> is the Pythonic implementation of the Gibbs-SeaWater for TEOS-10.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Step</strong></p></th>
+<th class="head"><p><strong>Step Description</strong></p></th>
+<th class="head"><p><strong>Supported in *acspype*?</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+<th class="head"><p><strong>Notes</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1.0</p></td>
+<td><p>Import ACS Device File and TS Correction Coefficients</p></td>
+<td><p>Yes</p></td>
+<td><p>Import a corresponding ACS device file (ACS-XXX.dev) and TS-correction coefficients (TS4.cor). These files are provided by Sea-Bird Scientific.</p></td>
+<td><p>The TS4.cor file from SBS should be the same for all ACS. <em>acspype</em> has these coefficients hardcoded. It is strongly recommended to rename the .dev file to ACS-XXXXX_YYYY-MM-DD.dev, where XXXXX is the zero padded serial number (e.g. 00011) and YYYY-MM-DD is the date of calibration in the device file, to avoid overwriting device files if stored in the same directory.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.1</p></td>
+<td><p>Compute Internal Temperature</p></td>
+<td><p>Yes</p></td>
+<td><p>Compute internal temperature of the sensor from raw counts. This data is needed for calculation of the measured (a_m, c_m) coefficients.</p></td>
+<td><p>The external temperature isn’t used in processing ACS data, but can also be calculated at this stage.</p></td>
+</tr>
+<tr class="row-even"><td><p>1.2</p></td>
+<td><p>OPTIONAL: Calculate Absolute Salinity and Conservative Temperature</p></td>
+<td><p>No (Use <a class="reference external" href="https://pypi.org/project/gsw/">GSW</a>)</p></td>
+<td><p>The use of TEOS-10 salinity/temperature over EOS-80 salinity/temperature variable should not impact the TS-correction of spectra significantly. However, it is recommended, particularly if other physical properties of seawater of interest in analysis (e.g. density).</p></td>
+<td><p>This requires a co-located CTD or TSG.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.3</p></td>
+<td><p>Compute Uncorrected Absorption (a_uncorrected) and Attenuation (c_uncorrected)</p></td>
+<td><p>Yes</p></td>
+<td><p>Compute the uncorrected absorption and attenuation in inverse meters (m^-1).</p></td>
+<td><p>This is the first step in the processing chain where the ACS data is converted from raw counts to engineering units. Comparing uncorrected values may be useful in identifying debris or bubbles in the flow path.</p></td>
+</tr>
+<tr class="row-even"><td><p>1.4</p></td>
+<td><p>Compute Measured Absorption (a_m_discontinuity) and Attenuation (c_m)</p></td>
+<td><p>Yes</p></td>
+<td><p>Compute the measured absorption and attenuation in inverse meters (m^-1).</p></td>
+<td><p><em>acspype</em> uses the measured (m) subscript because the filtration state of the medium is unknown. Use of the particulate-gelbstoff (pg), particulate (p), and gelbstoff (g) subscripts should be applied later at user discretion.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.5</p></td>
+<td><p>OPTIONAL: Apply User-Collected Pure Water Coefficients</p></td>
+<td><p>No</p></td>
+<td><p>Apply an additional pure water offset derived by the user.</p></td>
+<td><p>This may require multiple calibrations. Linear interpolation between two or more user created offsets will help assess and remove sensor drift.</p></td>
+</tr>
+<tr class="row-even"><td><p>1.6</p></td>
+<td><p>OPTIONAL, RECOMMENDED: Correct Measured Absorption (a_m) and Attenuation (c_m) for Discontinuity</p></td>
+<td><p>Yes</p></td>
+<td><p>Correct the measured absorption and attenuation for the observed discontinuity jump that occurs roughly halfway in each spectra.</p></td>
+<td><p>This step applies a scalar offset to the second half of the spectra to create a smoother spectrum.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.7</p></td>
+<td><p>Time Lag Correction</p></td>
+<td><p>No</p></td>
+<td><p>Using known volume, flow rate, and co-located sensors, shift ancillary variables to match the time the same water enters the ACS.</p></td>
+<td><p>This requires a nearby CTD or TSG and knowledge of the flow rate of water pumped through the ACS.</p></td>
+</tr>
+<tr class="row-even"><td><p>1.8</p></td>
+<td><p>Compute TS-Corrected Absorption (a_mts) and Attenuation (c_mts)</p></td>
+<td><p>Yes</p></td>
+<td><p>Using ancillary temperature (conservative temperature) and salinity (absolute salinity), correct spectra for the effect of temperature and salinity.</p></td>
+<td><p>This requires a nearby CTD or TSG. DO NOT USE THE ACS EXTERNAL TEMPERATURE.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1.9</p></td>
+<td><p>Zero Shift Correction Absorption (a_mts) and Attenuation (c_mts)</p></td>
+<td><p>Yes</p></td>
+<td><p>Shift values between -0.005 and 0 to be 0.</p></td>
+<td><p>“”</p></td>
+</tr>
+<tr class="row-even"><td><p>2.0</p></td>
+<td><p>OPTIONAL: A-C Lag Correction</p></td>
+<td><p>No</p></td>
+<td><p>This step is only necessary if flow cells are plumbed in series and if there analysis is done on full resolution data.</p></td>
+<td><p>OPTIONAL: This only applies if the flow cells are plumbed in series and you do not intend to resample to coarser time bins.</p></td>
+</tr>
+<tr class="row-odd"><td><p>3.0</p></td>
+<td><p>Interpolate to Common Wavelengths</p></td>
+<td><p>Yes</p></td>
+<td><p>Linearly interpolate absorption and attenuation variables to common wavelength bins.</p></td>
+<td><p>Linear interpolation between wavelength bins is not common in ACS literature. However, this makes it significantly easier to perform scattering correction and for comparison between absorption and attenuation.</p></td>
+</tr>
+<tr class="row-even"><td><p>3.1</p></td>
+<td><p>Correct Absorption for Scattering Using Baseline and Proportional Methods</p></td>
+<td><p>Yes</p></td>
+<td><p>Perform a user selected scattering correction to absorption.</p></td>
+<td><p>Baseline, Fixed, and Proportional Scattering Correction are provided by <em>acspype</em>. For scattering correction that requires a reference wavelength, 715nm is commonly used. However, <em>acspype</em> provides a function that will estimate an optimal reference wavelength by using the first red wavelength (&gt;700nm) that is closes to zero.</p></td>
+</tr>
+<tr class="row-odd"><td><p>4.0</p></td>
+<td><p>Run QAQC Tests</p></td>
+<td><p>Yes</p></td>
+<td><p>Run QAQC tests (see <a class="reference external" href="https://github.com/IanTBlack/acspype/blob/main/info/PROCESSING.md#recommended-qaqc-tests">Recommended QAQC Tests</a> table for recommended tests).</p></td>
+<td><p>Elapsed Time Test, Internal Temperature Test, Inf Nan Test, Gross Range Test</p></td>
+</tr>
+<tr class="row-even"><td><p>4.1</p></td>
+<td><p>Remove Poor Quality Spectra Based on QAQC Test Results</p></td>
+<td><p>No (Use <a class="reference external" href="https://docs.xarray.dev/en/latest/user-guide/indexing.html">Xarray</a>)</p></td>
+<td><p>Remove poor quality spectra from analysis. The results of some may tests provide indication of instrument malfunction, occurrence of debris or bubble in flow, or that the data is suspect because of defined limits in the sensor file.</p></td>
+<td><p>“”</p></td>
+</tr>
+<tr class="row-odd"><td><p>5.0</p></td>
+<td><p>Split into measured (a_pg, c_pg), particulate (a_p, c_p) and gelbstoff (a_g, c_g) Measurements</p></td>
+<td><p>No</p></td>
+<td><p>At this stage, data can be renamed to match its filtration state. Generally p = pg - g</p></td>
+<td><p>This stage requires knowledge of the filtration state of the seawater.</p></td>
+</tr>
+<tr class="row-even"><td><p>6.0</p></td>
+<td><p>Filter and Resample</p></td>
+<td><p>No</p></td>
+<td><p>At this stage, data can be passed through a series of smoothing filters and resampled to user-defined bins.</p></td>
+<td><p>This stage requires careful consideration of the required resolution for analysis.</p></td>
+</tr>
+<tr class="row-odd"><td><p>7.0</p></td>
+<td><p>Compute Advanced Data Products</p></td>
+<td><p>Yes (Ongoing Development)</p></td>
+<td><p>Corrected absorption and attenuation products are used to compute advanced data products (e.g. chlorophyll-a from absorption line height and particulate organic carbon).</p></td>
+<td><p>“”</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="id2">
+<h2>Recommended QAQC Tests<a class="headerlink" href="#id2" title="Link to this heading"></a></h2>
+<p>Flag meanings are based on the QARTOD flag meanings. Descriptions of each flag can be found in the <a class="reference external" href="https://iantblack.github.io/acspype/acspype.html#acspype.qaqc.FLAG">acspype flag documentation</a>.
+Tests are considered QARTOD tests if they were coded in a way that would satisfy the requirements for the generic QARTOD tests found in each manual (e.g. gap test, syntax test, gross range test, etc.). Test that are not QARTOD tests are custom tests developed from information in the ACS manual or are modified forms of a related QARTOD test.</p>
+<p>Note: If using <em>acspype</em> and a flag of 2 (NOT_EVALUATED) is assigned in these tests, that indicates there was a programmatic failure in the test and an issue should be raised on GitHub.  A flag of 9 (MISSING_DATA) indicates that the input data or ancillary data was missing.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Test Name</strong></p></th>
+<th class="head"><p><strong>Test Description</strong></p></th>
+<th class="head"><p><strong>Recommended Settings</strong></p></th>
+<th class="head"><p><strong>Is QARTOD?</strong></p></th>
+<th class="head"><p><strong>Possible Results</strong></p></th>
+<th class="head"><p><strong>Notes</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Gap Test</p></td>
+<td><p>The first stage is to compare the data acquisition time to the host computer clock time. The second stage is to compare the known record length against the number of bytes in the serial buffer.</p></td>
+<td><p>Time Increment = 0.25 (s)</p></td>
+<td><p>Yes</p></td>
+<td><p>4, 1</p></td>
+<td><p>This test is generally not performed on archived datasets. If using archived data, users should reach out to the data provider to verify the timestamps or data acquisition protocols.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Syntax Test</p></td>
+<td><p>The first stage checks if the registration bytes occur at the beginning of the packet. The second stage checks if the packet contains a pad byte at the end. The third stage compares the length of the packet against the size of the packet descriptor. The fourth stage compares the record length against the length of the packet. The fifth stage verifies the checksum.</p></td>
+<td><p>Not Applicable</p></td>
+<td><p>Yes</p></td>
+<td><p>4, 1</p></td>
+<td><p>This test is generally not performed on archived datasets, although it can be recreated when processing ACS packets that have been dumped into binary files.</p></td>
+</tr>
+<tr class="row-even"><td><p>Elapsed Time Test</p></td>
+<td><p>Check the elapsed time in each ACS sample to see if it is collected at a reasonable time since the instrument received power. The manufacturer states that the ACS takes up to 10 minutes to warm-up and that data may be questionable during this time. On moorings where power is a commodity, this is may not be possible.</p></td>
+<td><p>Fail Threshold = 45000 (ms)<span class="raw-html-m2r"><br></span>Suspect Threshold = 240000 (ms)</p></td>
+<td><p>No (Minimum Side Gross Range Test)</p></td>
+<td><p>4, 3, 1</p></td>
+<td><p>The fail and suspect values used in this test depend on the ACS datasets. For moored or profiler time-series, a lower fail/suspect threshold may be best, otherwise significant quantities of the data may be flagged. Users should understand that data collected at the beginning of a power start up sequence may be excessively noisy or contain inaccurate data. This data should be carefully reviewed.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Internal Temperature Test</p></td>
+<td><p>Check the internal temperature of the ACS to see if it is within the range specified in the device file. Values outside the device calibration range are flagged as suspect.</p></td>
+<td><p>Defined in device file and automatically applied.</p></td>
+<td><p>No (Gross Range Test)</p></td>
+<td><p>3, 1</p></td>
+<td><p>Data outside the calibrated temperature bins may be suspect simply because it exists outside of the calibrated range. A typical calibration range is 2-35 degC. If experiencing waters outside that range, users should request a larger calibration range from SBS.</p></td>
+</tr>
+<tr class="row-even"><td><p>Inf Nan Test</p></td>
+<td><p>Check the uncorrected values for Inf and NaN values. Inf and Nan values can appear in uncorrected measurements for a number of reasons. A common reason is that the one or multiple reference counts contain the value of 0, which propagate to NaN when performing a log operation and remain at each processing step.</p></td>
+<td><p>Not Applicable</p></td>
+<td><p>No (Custom test)</p></td>
+<td><p>4, 1</p></td>
+<td><p>If a NaN exists in the spectrum, it can probably be discarded. Users should review the surrounding spectrum and the same wavelength bin to determine if the issue is a one-off. Repeated NaNs (or zero reference counts) in uncorrected values may indicate that factory recalibration is needed or an instrument malfunction.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Gross Range Test</p></td>
+<td><p>On TS and scattering corrected spectrum, run the gross range test, which will assign a flag for each wavelength in a spectra.</p></td>
+<td><p>Fail Threshold = [0, 10]<span class="raw-html-m2r"><br></span>Suspect Threshold = [0.001,8.5]</p></td>
+<td><p>Yes</p></td>
+<td><p>4, 3, 1</p></td>
+<td><p>Some may find that this results in fail flags in the red wavelengths, even after correction. This</p></td>
+</tr>
+<tr class="row-even"><td><p>Blanket Gross Range Test</p></td>
+<td><p>Assigns a blanket flag to the entire spectrum if a certain percentage of coefficients across the spectrum are flagged as fail. This is useful for identifying spectra that are not suitable for further processing.</p></td>
+<td><p>Ignore Wavelengths = [700, 755]<span class="raw-html-m2r"><br></span>Fail Threshold = 10<span class="raw-html-m2r"><br></span>Suspect Threshold = 5</p></td>
+<td><p>No (Modified Gross Range Test)</p></td>
+<td><p>4, 3, 1</p></td>
+<td><p>This may be useful for identifying poor quality spectra. Users should review the neighboring spectrum samples to see if the issue is persistent or a one-off. If only one spectrum is found as failed while the neighboring spectrum are ok, then it could probably be removed before analysis is performed without a significant impact on the end result.</p></td>
+</tr>
+<tr class="row-odd"><td><p>A Greater Than C Test</p></td>
+<td><p>Check if scattering corrected absorption is greater than ts-corrected attenuation. Consecutive values in a spectrum and over time may indicate bubbles or a stuck object in the flow cell.</p></td>
+<td><p>Not Applicable</p></td>
+<td><p>No (Modified Minimum Side Gross Range Test)</p></td>
+<td><p>3, 1</p></td>
+<td><p>This test should be used to consider data suspect, but should not be used to immediately remove data.</p></td>
+</tr>
+<tr class="row-even"><td><p>Rolling Variance Test</p></td>
+<td><p>Assigns a flag at each wavelength bin of spectrum if the variance over time exceeds a percentage of the mean. A rolling centered window is used to calculate the variance and a flag is assigned to the central sample.</p></td>
+<td><p>Percentage = 25<span class="raw-html-m2r"><br></span>Window Size = 240</p></td>
+<td><p>No (Custom Test)</p></td>
+<td><p>3, 1</p></td>
+<td><p>Suspect flags may indicate bubbles or debris in the flow cell.  NOT CURRENTLY IMPLEMENTED.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Discontinuity Offset Test</p></td>
+<td><p>Check if the absolute value of the discontinuity offset exceeds a fail threshold or a multiple of the median for the time-series.</p></td>
+<td><p>Fail Threshold = 10<span class="raw-html-m2r"><br></span>Median Multiplier = 3</p></td>
+<td><p>No (Custom Test)</p></td>
+<td><p>4, 3, 1</p></td>
+<td><p>Discontinuity offsets that are larger than the fail threshold are flagged as fail. The maximum sensing range of the ACS is used as the default for the fail threshold. In general, discontinuity offsets should be small and within the typical precision of the sensor (+/- 0.003 m^-1). A second option for defining a median multiplier is used to flag data that exceed X times the median as suspect.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="recommended-naming-conventions">
+<h1>Recommended Naming Conventions<a class="headerlink" href="#recommended-naming-conventions" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://numpy.org/doc/stable/reference/typing.html">ArrayLike</a> indicates that the variable can be represented as a 1-dimensional (1xN) list, tuple, or numpy array.</p>
+<p><a class="reference external" href="https://numpy.org/doc/stable/reference/typing.html">NDArray</a> indicates that the variable can be represented as a 2-dimensional (MxN) list, tuple, or numpy array.
+For output data, M is usually time and N is equivalent in size to the number of output wavelength bins.
+For the device file, M is usually the number of temperature bins and N is equivalent in size to the number of wavelength bins.</p>
+<section id="acs-device-file-variables-and-functions">
+<h2>ACS Device File Variables and Functions<a class="headerlink" href="#acs-device-file-variables-and-functions" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Brief Description</strong></p></th>
+<th class="head"><p><strong>Python Data Type</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sensor_type</p></td>
+<td><p>The type of the sensor. This is always “ACS Meter”.</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>sn_hexdec</p></td>
+<td><p>The hexadecimal representation of the ACS serial number.</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>sn</p></td>
+<td><p>The string representation of the ACS serial number.  ACS’s number in the hundreds. acspype zero-pads the serial number to 5 digits (e.g. ACS-00123).</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>structure_version</p></td>
+<td><p>The file structure version for the ACS. Structure version 3 is the current version of the ACS device file.</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>tcal</p></td>
+<td><p>The temperature of the water used in the ACS factory calibration.   This is most often used as the reference temperature in temperature-salinity correction.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-odd"><td><p>ical</p></td>
+<td><p>The internal instrument temperature during ACS factory calibration.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-even"><td><p>cal_date</p></td>
+<td><p>The date the ACS was calibrated at the factory.    The calibration date in the device file could be mm/dd/yy or mm/dd/yyyy, single or zero padded digits. acspype accounts for this and converts the calibration to a string in the form of YYYY-mm-dd.</p></td>
+<td><p>str</p></td>
+<td><p>ISO8601 UTC</p></td>
+</tr>
+<tr class="row-odd"><td><p>path_length</p></td>
+<td><p>The path length of the ACS flow cells. This value is critical for the conversion from raw to geophysical units.</p></td>
+<td><p>float</p></td>
+<td><p>meters</p></td>
+</tr>
+<tr class="row-even"><td><p>num_wavelength</p></td>
+<td><p>The number of wavelength bins for the absorption and attenuation channels.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>num_tbin</p></td>
+<td><p>The number of temperature bins created for calculating delta T offsets.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>baudrate</p></td>
+<td><p>The serial communication speed of the ACS. The ACS only has one baudrate setting (115200 bps).</p></td>
+<td><p>int</p></td>
+<td><p>bps</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_wavelength</p></td>
+<td><p>The factory defined wavelength bins of the absorption channel.    The absorption wavelength bins are unique from the attenuation wavelength bins. They are also unique between ACS instruments.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+<tr class="row-even"><td><p>c_wavelength</p></td>
+<td><p>The factory defined wavelength bins of the attenuation channel.  The attenuation wavelength bins are unique from the absorption wavelength bins. They are also unique between ACS instruments.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+<tr class="row-odd"><td><p>tbin</p></td>
+<td><p>The factory defined bins created for calculating delta T offsets for internal temperature correction.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-even"><td><p>c_offset</p></td>
+<td><p>The factory defined pure water offsets for the attenuation channel at each respective wavelength bin.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_offset</p></td>
+<td><p>The factory defined pure water offsets for the absorption channel at each respective wavelength bin.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>c_delta_t</p></td>
+<td><p>The factory defined delta T offsets for the attenuation channel at each respective temperature bin and wavelength bin. The shape of this is tbin x num_wavelengths.</p></td>
+<td><p>NDArray[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_delta_t</p></td>
+<td><p>The factory defined delta T offsets for the absorption channel at each respective temperature bin and wavelength bin. The shape of this is tbin x num_wavelengths.</p></td>
+<td><p>NDArray[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>func_a_delta_t</p></td>
+<td><p>A function that calculates the appropriate delta T offset give the temperature for the absorption channel. acspype uses scipy.interpolate.make_interp_spline with a k-value of 1.</p></td>
+<td><p>callable function</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>func_c_delta_t</p></td>
+<td><p>A function that calculates the appropriate delta T offset give the temperature for the attenuation channel. acspype uses scipy.interpolate.make_interp_spline with a k-value of 1.</p></td>
+<td><p>callable function</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>depth_cal_1</p></td>
+<td><p>This value is not currently used because the ACS does not have a pressure sensor. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>depth_cal_2</p></td>
+<td><p>This value is not currently used because the ACS does not have a pressure sensor. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>max_a_noise</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_c_noise</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>max_a_nonconform</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_c_nonconform</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>max_a_difference</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_c_difference</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>min_a_counts</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_c_counts</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>min_r_counts</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>max_temp_sd</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>max_depth_sd</p></td>
+<td><p>This value is not currently used or edited at the factory. It is retained for completeness and the event of future ACS updates. It can be safely ignored.</p></td>
+<td><p>float</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>wavelength_color_schemes</p></td>
+<td><p>Wavelength color schemes used by WETView when plotting data.</p></td>
+<td><p>ArrayLike[str]</p></td>
+<td><p>N/A</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="acs-tscor-variables">
+<h2>ACS TSCor Variables<a class="headerlink" href="#acs-tscor-variables" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Brief Description</strong></p></th>
+<th class="head"><p><strong>Python Data Type</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>wavelength</p></td>
+<td><p>The wavelength bin of the corresponding T-S correction coefficients. The wavelength bins in this file are used to identify the appropriate coefficients for TS-correction.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+<tr class="row-odd"><td><p>psi_t</p></td>
+<td><p>The temperature correction coefficient.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1/degree Celsius</p></td>
+</tr>
+<tr class="row-even"><td><p>psi_s_c</p></td>
+<td><p>The salinity correction coefficient for the attenuation channel.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1/PSU</p></td>
+</tr>
+<tr class="row-odd"><td><p>psi_s_a</p></td>
+<td><p>The salinity correction coefficient for the absorption channel.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1/PSU</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="acs-output-and-processed-coordinates">
+<h2>ACS Output and Processed Coordinates<a class="headerlink" href="#acs-output-and-processed-coordinates" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Brief Description</strong></p></th>
+<th class="head"><p><strong>Python Data Type</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>daq_time</p></td>
+<td><p>Time of data acquisition in UTC. This represents the time that was assigned to the ACS packet as it was read over serial. The ACS does not produce a timestamp on its own.</p></td>
+<td><p>datetime</p></td>
+<td><p>nanoseconds since 1900-01-01 UTC</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_wavelength</p></td>
+<td><p>The wavelength bins of the absorption channel. The wavelength bins are unique from the attenuation wavelength bins.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+<tr class="row-even"><td><p>c_wavelength</p></td>
+<td><p>The wavelength bins of the attenuation channel. The wavelength bins are unique from the absorption wavelength bins.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+<tr class="row-odd"><td><p>wavelength</p></td>
+<td><p>Interpolated and common wavelength bins between the absorption and attenuation channels. The wavelength bins are unique from the absorption and attenuation wavelength bins.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>nm</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="acs-output-and-processed-variables">
+<h2>ACS Output and Processed Variables<a class="headerlink" href="#acs-output-and-processed-variables" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Brief Description</strong></p></th>
+<th class="head"><p><strong>Python Data Type</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>packet</p></td>
+<td><p>A full packet from the ACS, including registration bytes at the beginning and pad byte at the end.</p></td>
+<td><p>bytes or bytearray</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>record_length</p></td>
+<td><p>The number of bytes in a packet.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>packet_type</p></td>
+<td><p>The type of the packet received.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>sn_int</p></td>
+<td><p>Integer representation of the ACS serial number.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>a_reference_dark</p></td>
+<td><p>Dark counts for the reference measurement of absorption.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_reference_dark</p></td>
+<td><p>Dark counts for the reference measurement of attenuation.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-even"><td><p>a_signal_dark</p></td>
+<td><p>Dark counts for the signal measurement of absorption.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_signal_dark</p></td>
+<td><p>Dark counts for the signal measurement of attenuation.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-even"><td><p>raw_internal_temperature</p></td>
+<td><p>Raw counts from the internal thermistor of the ACS.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-odd"><td><p>raw_external_temperature</p></td>
+<td><p>Raw counts from the external thermistor of the ACS.</p></td>
+<td><p>int</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-even"><td><p>number_of_wavelengths</p></td>
+<td><p>The number of wavelength bins for the absorption and attenuation channels.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>checksum</p></td>
+<td><p>Checksum of the packet.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>a_reference</p></td>
+<td><p>Absorption reference counts. Used in the computation of uncorrected absorption.</p></td>
+<td><p>ArrayLike[int]</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_reference</p></td>
+<td><p>Attenuation reference counts. Used in the computation of uncorrected attenuation</p></td>
+<td><p>ArrayLike[int]</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-even"><td><p>a_signal</p></td>
+<td><p>Absorption signal counts. Used in the computation of uncorrected absorption.</p></td>
+<td><p>ArrayLike[int]</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_signal</p></td>
+<td><p>Attenuation signal counts. Used in the computation of uncorrected attenuation.</p></td>
+<td><p>ArrayLike[int]</p></td>
+<td><p>counts</p></td>
+</tr>
+<tr class="row-even"><td><p>sn_hexdec</p></td>
+<td><p>The hexadecimal representation of the ACS serial number.</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>serial_number</p></td>
+<td><p>The string representation of the ACS serial number.</p></td>
+<td><p>str</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>internal_temperature</p></td>
+<td><p>The internal temperature of the ACS in degrees Celsius from the internal thermistor.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-odd"><td><p>external_temperature</p></td>
+<td><p>The external temperature of the ACS in degrees Celsius from the external thermistor.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-even"><td><p>a_uncorrected</p></td>
+<td><p>The uncorrected absorption values. These values have not been corrected for pure water or for internal temperature variation.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_uncorrected</p></td>
+<td><p>The uncorrected attenuation values. These values have not been corrected for pure water or for internal temperature variation.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>discontinuity_index</p></td>
+<td><p>The index of the spectrum discontinuity. Typically occurs between 530 and 600 nm in each channel. This value is determined using the differences between the a_wavelength and c_wavelength bins.</p></td>
+<td><p>int</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_discontinuity_offset</p></td>
+<td><p>The discontinuity offset to apply at the discontinuity index for the absorption channel.</p></td>
+<td><p>float</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>c_discontinuity_offset</p></td>
+<td><p>The discontinuity offset to apply at the discontinuity index for the attenuation channel.</p></td>
+<td><p>float</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_m_discontinuity</p></td>
+<td><p>The measured absorption coefficient with the discontinuity still in place.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>c_m_discontinuity</p></td>
+<td><p>The measured attenuation coefficient with the discontinuity still in place.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_m</p></td>
+<td><p>The measured absorption coefficient, corrected for the discontinuity observed at the discontinuity index.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>c_m</p></td>
+<td><p>The measured attenuation coefficient, corrected for the discontinuity observed at the discontinuity index.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_mts</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature and salinity.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>c_mts</p></td>
+<td><p>The measured attenuation coefficient, corrected for the effects of temperature and salinity. This is generally the final processing stage for attenuation.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_mts_baseline</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature, salinity, and the baseline (aka flat) scattering correction method.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>a_mts_fixed</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature, salinity, and the fixed scattering correction method.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_mts_proportional</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature, salinity, and the proportional scattering correction method.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>a_mts_baseline_plus</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature, salinity, and the baseline plus (aka flat plus) scattering correction method.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>a_mts_proportional_plus</p></td>
+<td><p>The measured absorption coefficient, corrected for the effects of temperature, salinity, and the proportional plus scattering correction method.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>a_pg</p></td>
+<td><p>The contribution of particulates and gelbstoff to absorption. If sampling seawater, this value is equivalent to m.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_pg</p></td>
+<td><p>The contribution of particulates and gelbstoff to attenuation. If sampling seawater, this value is equivalent to m.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>a_p</p></td>
+<td><p>The contribution of particulates to absorption. Determination of this requires prior determination and subtraction of the gelbstoff signal.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_p</p></td>
+<td><p>The contribution of particulates to attenuation. Determination of this requires prior determination and subtraction of the gelbstoff signal.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-even"><td><p>a_g</p></td>
+<td><p>The contribution of gelbstoff (dissolved constituents) to absorption. Determination of this requires seawater filtered down to 0.2 microns before being sampled by the ACS.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+<tr class="row-odd"><td><p>c_g</p></td>
+<td><p>The contribution of gelbstoff (dissolved constituents) to attenuation. Determination of this requires seawater filtered down to 0.2 microns before being sampled by the ACS.</p></td>
+<td><p>ArrayLike[float]</p></td>
+<td><p>m^-1</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ancillary-variables">
+<h2>Ancillary Variables<a class="headerlink" href="#ancillary-variables" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Brief Description</strong></p></th>
+<th class="head"><p><strong>Python Data Type</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>sea_water_temperature</p></td>
+<td><p>The temperature of the seawater sample, typically under ITS-90. This is the temperature of the water at the time of sampling. May or may not account for time-lag.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-odd"><td><p>sea_water_practical_salinity</p></td>
+<td><p>The practical salinity of the seawater sample, typically under PSS-78/EOS-80. This is the salinity of the water at the time of sampling. May or may not account for time-lag.</p></td>
+<td><p>float</p></td>
+<td><p>ppt (PSU)</p></td>
+</tr>
+<tr class="row-even"><td><p>sea_water pressure</p></td>
+<td><p>The pressure of the seawater sample in decibars. Used in calculating TEOS-10 products and depth.</p></td>
+<td><p>float</p></td>
+<td><p>dbar</p></td>
+</tr>
+<tr class="row-odd"><td><p>sea_water_conservative_temperature</p></td>
+<td><p>The conservative temperature of the seawater sample as calculated from sea_water_absolute_salinity and sea_water temperature.</p></td>
+<td><p>float</p></td>
+<td><p>Celsius</p></td>
+</tr>
+<tr class="row-even"><td><p>sea_water_absolute_salinity</p></td>
+<td><p>The absolute salinity of the seawater sample as calculated from sea_water_practical_salinity and sea_water_temperature.</p></td>
+<td><p>float</p></td>
+<td><p>g/kg (ASU)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="reference-material">
+<h1>Reference Material<a class="headerlink" href="#reference-material" title="Link to this heading"></a></h1>
+<section id="manuals">
+<h2>Manuals<a class="headerlink" href="#manuals" title="Link to this heading"></a></h2>
+<p>The most up-to-date manuals and protocols for the ACS can be found on the <a class="reference external" href="https://www.seabird.com/ac-s-spectral-absorption-and-attenuation-sensor/product-downloads?id=60762467715">Sea-Bird Scientific ACS Downloads Page</a>.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.seabird.com/asset-get.download.jsa?id=69833852764">ACS Manual</a> (<em>acspype</em> was released referencing Revision N)</p></li>
+<li><p><a class="reference external" href="https://www.seabird.com/asset-get.download.jsa?id=69833849025">ACS Protocol Document</a> (<em>acspype</em> was released referencing Revision Q)</p></li>
+<li><p><a class="reference external" href="https://www.seabird.com/asset-get.download.jsa?id=69833854925">WETView 7 Manual</a> (<em>acspype</em> was released referencing Revision F)</p></li>
+</ul>
+</section>
+<section id="literature">
+<h2>Literature<a class="headerlink" href="#literature" title="Link to this heading"></a></h2>
+<p>Below is a small list of ACS, absorption, attenuation, or ACS data product related literature.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Author</p></th>
+<th class="head"><p>Year</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Link</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Zaneveld et al.</p></td>
+<td><p>1994</p></td>
+<td><p>Scattering error correction of reflecting-tube absorption meters</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1117/12.190095">https://doi.org/10.1117/12.190095</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Bricaud et al.</p></td>
+<td><p>1995</p></td>
+<td><p>Variability in the chlorophyll-specific absorption coefficients of natural phytoplankton: Analysis and parameterization</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1029/95JC00463">https://doi.org/10.1029/95JC00463</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Davis et al.</p></td>
+<td><p>1997</p></td>
+<td><p>Reducing the effects of fouling on chlorophyll estimates derived from long-term deployments of optical instruments</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1029/96JC02430">https://doi.org/10.1029/96JC02430</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Pegau et al.</p></td>
+<td><p>1997</p></td>
+<td><p>Absorption and attenuation of visible and near-infrared light in water: dependence on temperature and salinity</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1364/AO.36.006035">https://doi.org/10.1364/AO.36.006035</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Pegau et al.</p></td>
+<td><p>2003</p></td>
+<td><p>Ocean Optics Protocols for Satellite Ocean Color Sensor Validation, Revision 4, Volume IV</p></td>
+<td><p><a class="reference external" href="https://ntrs.nasa.gov/api/citations/20030093642/downloads/20030093642.pdf">https://ntrs.nasa.gov/api/citations/20030093642/downloads/20030093642.pdf</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Behrenfeld and Boss</p></td>
+<td><p>2006</p></td>
+<td><p>Beam attenuation and chlorophyll concentration as alternative optical indices of phytoplankton biomass.</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1357/002224006778189563">https://doi.org/10.1357/002224006778189563</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Gardner et al.</p></td>
+<td><p>2006</p></td>
+<td><p>Global POC concentrations from in-situ and satellite data</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.dsr2.2006.01.029">https://doi.org/10.1016/j.dsr2.2006.01.029</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Sullivan et al.</p></td>
+<td><p>2006</p></td>
+<td><p>Hyperspectral temperature and salt dependencies of absorption by water and heavy water in the 400–750 nm spectral range</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1364/AO.45.005294">https://doi.org/10.1364/AO.45.005294</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Boss et al.</p></td>
+<td><p>2007</p></td>
+<td><p>Measurements of spectral optical properties and their relation to biogeochemical variables and processes in Crater Lake, Crater Lake National Park, OR</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1007/978-1-4020-5824-0_9">https://doi.org/10.1007/978-1-4020-5824-0_9</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Stramski et al.</p></td>
+<td><p>2008</p></td>
+<td><p>Relationships between the surface concentration of particulate  organic carbon and optical properties in the eastern South Pacific  and eastern Atlantic Oceans</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.5194/bg-5-171-2008">https://doi.org/10.5194/bg-5-171-2008</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Slade et al.</p></td>
+<td><p>2010</p></td>
+<td><p>Underway and Moored Methods for Improving Accuracy in Measurement of Spectral Particulate Absorption and Attenuation</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1175/2010JTECHO755.1">https://doi.org/10.1175/2010JTECHO755.1</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Cetenic et al.</p></td>
+<td><p>2012</p></td>
+<td><p>Particulate organic carbon and inherent optical properties  during 2008 North Atlantic Bloom Experiment</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1029/2011JC007771">https://doi.org/10.1029/2011JC007771</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Rottgers et al.</p></td>
+<td><p>2013</p></td>
+<td><p>Evaluation of scatter corrections for ac-9 absorption measurements in coastal waters</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.mio.2013.11.001">https://doi.org/10.1016/j.mio.2013.11.001</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Roesler and Barnard</p></td>
+<td><p>2013</p></td>
+<td><p>Optical proxy for phytoplankton biomass in the absence of photophysiology: Rethinking the absorption line height</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.mio.2013.12.003">https://doi.org/10.1016/j.mio.2013.12.003</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Boss et al.</p></td>
+<td><p>2013</p></td>
+<td><p>The characteristics of particulate absorption, scattering and attenuation coefficients in the surface ocean; Contribution of the Tara Oceans expedition</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.mio.2013.11.002">https://doi.org/10.1016/j.mio.2013.11.002</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Stockley et al.</p></td>
+<td><p>2017</p></td>
+<td><p>Assessing uncertainties in scattering correction algorithms for reflective tube absorption measurements made with a WET Labs ac-9</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1364/OE.25.0A1139">https://doi.org/10.1364/OE.25.0A1139</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Boss et al.</p></td>
+<td><p>2019</p></td>
+<td><p>Ocean Optics and Biogeochemistry Protocols for Satellite Ocean Colour Sensor Validation, Volume 2.0. Beam Transmission and Attenuation Coefficients: Instruments, Characterization, Field Measurements and Data Analysis Protocols.</p></td>
+<td><p><a class="reference external" href="http://dx.doi.org/10.25607/OBP-458">http://dx.doi.org/10.25607/OBP-458</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Goni et al.</p></td>
+<td><p>2021</p></td>
+<td><p>Wintertime particulate organic matter distributions in surface waters of the northern California current system</p></td>
+<td><p><a class="reference external" href="https://doi.org/10.1016/j.csr.2020.104312">https://doi.org/10.1016/j.csr.2020.104312</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Mobley</p></td>
+<td><p>2022</p></td>
+<td><p>The Ocean Optics Book</p></td>
+<td><p><a class="reference external" href="http://dx.doi.org/10.25607/OBP-1710">http://dx.doi.org/10.25607/OBP-1710</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="software">
+<h2>Software<a class="headerlink" href="#software" title="Link to this heading"></a></h2>
+<p>Below is a list of other code sets that provide ACS processing scripts or other related functionality.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Author</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Link</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Bausell, Jesse</p></td>
+<td><p>acsPROCESS_INTERACTIVE</p></td>
+<td><p><a class="reference external" href="https://github.com/JesseBausell/acsPROCESS_INTERACTIVE/">https://github.com/JesseBausell/acsPROCESS_INTERACTIVE/</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Bourdin, Guillaume</p></td>
+<td><p>InLineAnalysis</p></td>
+<td><p><a class="reference external" href="https://github.com/OceanOptics/InLineAnalysis">https://github.com/OceanOptics/InLineAnalysis</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Haëntjens, Nils</p></td>
+<td><p>Inlinino</p></td>
+<td><p><a class="reference external" href="https://github.com/OceanOptics/Inlinino">https://github.com/OceanOptics/Inlinino</a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Haëntjens, Nils</p></td>
+<td><p>pyACS</p></td>
+<td><p><a class="reference external" href="https://github.com/OceanOptics/pyACS">https://github.com/OceanOptics/pyACS</a></p></td>
+</tr>
+<tr class="row-even"><td><p>Wingard</p></td>
+<td><p>ooi-data-explorations</p></td>
+<td><p><a class="reference external" href="https://github.com/oceanobservatories/ooi-data-explorations">https://github.com/oceanobservatories/ooi-data-explorations</a></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="acspype.html" class="btn btn-neutral float-left" title="acspype code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

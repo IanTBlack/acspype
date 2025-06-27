@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.stream &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.stream</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.stream</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions and classes for reading and parsing ACS data over RS232.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">import</span> <span class="nn">serial</span>
+
+<span class="kn">from</span> <span class="nn">acspype.core</span> <span class="kn">import</span> <span class="n">PACKET_REGISTRATION</span>
+<span class="kn">from</span> <span class="nn">acspype.structures</span> <span class="kn">import</span> <span class="n">ACSPacket</span><span class="p">,</span> <span class="n">ParsedPacket</span><span class="p">,</span> <span class="n">DeviceCalibratedPacket</span><span class="p">,</span> <span class="n">TSCorrectedPacket</span>
+<span class="kn">from</span> <span class="nn">acspype.packet</span> <span class="kn">import</span> <span class="n">parse_packet</span><span class="p">,</span> <span class="n">calibrate_packet</span><span class="p">,</span> <span class="n">ts_correct_packet</span>
+<span class="kn">from</span> <span class="nn">acspype.dev</span> <span class="kn">import</span> <span class="n">ACSDev</span>
+
+
+<div class="viewcode-block" id="ACSStream">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream">[docs]</a>
+<span class="k">class</span> <span class="nc">ACSStream</span><span class="p">:</span>
+    <span class="n">BAUDRATE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">115200</span>
+    <span class="n">BYTESIZE</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">PARITY</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;N&#39;</span>
+    <span class="n">STOPBITS</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">FLOWCONTROL</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">TIMEOUT</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">baudrate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">BAUDRATE</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">TIMEOUT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate the ACSSerial class, reset the serial port, and clear any data in memory.</span>
+
+<span class="sd">        :param port: The COM port the ACS is connected to.</span>
+<span class="sd">        :param baudrate: The baudrate of the ACS. All ACS sensors come from the factory set to 115200 bps.</span>
+<span class="sd">        :param timeout: The number of seconds to wait before actions timeout.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_packet_buffer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reset_serial</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="n">baudrate</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ACSStream.clear_serial_buffers">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.clear_serial_buffers">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_serial_buffers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear the input and output serial buffers on the class assigned port.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">reset_input_buffer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">reset_output_buffer</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.clear_packet_buffer">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.clear_packet_buffer">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_packet_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear the packet buffer that is currently in memory.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.reset_serial">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.reset_serial">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                     <span class="n">baudrate</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                     <span class="n">bytesize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">BYTESIZE</span><span class="p">,</span>
+                     <span class="n">parity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">PARITY</span><span class="p">,</span>
+                     <span class="n">stopbits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">STOPBITS</span><span class="p">,</span>
+                     <span class="n">flowcontrol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">FLOWCONTROL</span><span class="p">,</span>
+                     <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">TIMEOUT</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset or instantiate serial object using the assigned settings.</span>
+
+<span class="sd">        :param port: A string representing the COM port the ACS is connected to. e.g. &#39;COM1&#39; or &#39;/dev/ttyUSB0&#39;</span>
+<span class="sd">        :param baudrate: The baudrate the ACS communicates at. All ACS sensors come from the factory set to 115200 bps.</span>
+<span class="sd">        :param bytesize: The number of bits in a byte. Default is 8.</span>
+<span class="sd">        :param parity: The parity setting for the ACS. Default is &#39;N&#39; for no parity.</span>
+<span class="sd">        :param stopbits: The number of stop bits. Default is 1.</span>
+<span class="sd">        :param flowcontrol: The flow control setting. Default is 0 for no flow control.</span>
+<span class="sd">        :param timeout: The number of seconds to wait before timeout. Default is 1 second.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span> <span class="o">=</span> <span class="n">serial</span><span class="o">.</span><span class="n">Serial</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">baudrate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">baudrate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">bytesize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bytesize</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">parity</span> <span class="o">=</span> <span class="n">parity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">stopbits</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stopbits</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">xonxoff</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">flowcontrol</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.connect">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.connect">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to connect to the port assigned at class instantiation.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">ConnectionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">serial</span><span class="o">.</span><span class="n">PortNotOpenError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.disconnect">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.disconnect">[docs]</a>
+    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disconnect from the port assigned at class instantiation.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_serial_buffers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_packet_buffer</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.read_stream">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.read_stream">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read the current number of bytes waiting in the serial port buffer and append them to a byte array in memory.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">incoming</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_serial</span><span class="o">.</span><span class="n">in_waiting</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">incoming</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.find_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.find_packet">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_packet</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ACSPacket</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find the first full ACS packet within buffered serial data.</span>
+
+<span class="sd">        :return: Raw ACS Packet data stored in a custom NamedTuple.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">old_bytes</span><span class="p">,</span> <span class="n">reg_bytes</span><span class="p">,</span> <span class="n">remaining_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">PACKET_REGISTRATION</span><span class="p">)</span>
+        <span class="n">daq_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">PACKET_REGISTRATION</span> <span class="ow">in</span> <span class="n">remaining_bytes</span><span class="p">:</span>
+            <span class="n">packet_data</span><span class="p">,</span> <span class="n">next_reg_bytes</span><span class="p">,</span> <span class="n">next_loop_bytes</span> <span class="o">=</span> <span class="n">remaining_bytes</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">PACKET_REGISTRATION</span><span class="p">)</span>
+            <span class="n">packet</span> <span class="o">=</span> <span class="n">reg_bytes</span> <span class="o">+</span> <span class="n">packet_data</span>  <span class="c1"># Rebuild the complete packet.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">next_reg_bytes</span> <span class="o">+</span> <span class="n">next_loop_bytes</span>  <span class="c1"># Redefine buffer.</span>
+            <span class="n">acs_packet</span> <span class="o">=</span> <span class="n">ACSPacket</span><span class="p">(</span><span class="n">daq_time</span><span class="o">=</span><span class="n">daq_time</span><span class="p">,</span> <span class="n">full_packet</span><span class="o">=</span><span class="n">packet</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">acs_packet</span> <span class="o">=</span> <span class="n">ACSPacket</span><span class="p">(</span><span class="n">daq_time</span><span class="o">=</span><span class="n">daq_time</span><span class="p">,</span> <span class="n">full_packet</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">acs_packet</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Context Manager: Automatically connect to the assigned port number when used in a &quot;with&quot; statement.</span>
+
+<span class="sd">        :return: Class conditions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Context Manager: Exit and perform garbage cleanup.</span>
+
+<span class="sd">        :param exc_type: The type of exception that was raised.</span>
+<span class="sd">        :param exc_value: The value of the exception that was raised.</span>
+<span class="sd">        :param traceback: The traceback of the exception that was raised.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ACSStream.parse_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.parse_packet">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_packet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acs_packet</span><span class="p">:</span> <span class="n">ACSPacket</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedPacket</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ACSStream wrapper for the parse_packet function inherited from the packet module.&quot;&quot;&quot;</span>
+        <span class="n">parsed_packet</span> <span class="o">=</span> <span class="n">parse_packet</span><span class="p">(</span><span class="n">acs_packet</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed_packet</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.calibrate_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.calibrate_packet">[docs]</a>
+    <span class="k">def</span> <span class="nf">calibrate_packet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parsed_packet</span><span class="p">,</span> <span class="n">dev</span><span class="p">:</span> <span class="n">ACSDev</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceCalibratedPacket</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ACSStream wrapper for the calibrate_packet function inherited from the packet module.&quot;&quot;&quot;</span>
+        <span class="n">dev_cal_packet</span> <span class="o">=</span> <span class="n">calibrate_packet</span><span class="p">(</span><span class="n">parsed_packet</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dev_cal_packet</span></div>
+
+
+<div class="viewcode-block" id="ACSStream.ts_correct_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.stream.ACSStream.ts_correct_packet">[docs]</a>
+    <span class="k">def</span> <span class="nf">ts_correct_packet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev_cal_packet</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">salinity</span><span class="p">,</span> <span class="n">dev</span><span class="p">:</span> <span class="n">ACSDev</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TSCorrectedPacket</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;ACSStream wrapper for the ts_correct_packet function inherited from the packet module.&quot;&quot;&quot;</span>
+        <span class="n">ts_corrected_packet</span> <span class="o">=</span> <span class="n">ts_correct_packet</span><span class="p">(</span><span class="n">dev_cal_packet</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">salinity</span><span class="p">,</span> <span class="n">dev</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ts_corrected_packet</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,210 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype README &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="acspype code" href="acspype.html" />
+    <link rel="prev" title="acspype" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">acspype README</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quickstart-examples">Quickstart Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#issues-discussions-and-contributions">Issues, Discussions, and Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#caution"><strong>CAUTION</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#equipment">Equipment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#serial-processing-limitations">Serial Processing Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#additional-information">Additional Information</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#processing-steps-and-qaqc">Processing Steps and QAQC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reference-material">Reference Material</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#what-does-acspype-need-from-you-and-sea-bird-scientific">What does acspype need from you (and Sea-Bird Scientific)?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#what-does-this-package-not-do">What does this package <strong>not</strong> do?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">acspype README</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme_link.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="acspype-readme">
+<h1>acspype README<a class="headerlink" href="#acspype-readme" title="Link to this heading"></a></h1>
+<a class="reference external image-reference" href="https://github.com/IanTBlack/acspype/blob/main/dev_tools/_images/ooi_optaa_nsif.jpg?raw=true"><img alt="" src="https://github.com/IanTBlack/acspype/blob/main/dev_tools/_images/ooi_optaa_nsif.jpg?raw=true" />
+</a>
+<p><em>Image from work supported by the U.S. National Science Foundation Ocean Observatories Initiative.</em></p>
+<p>acspype provides functions for reading <a class="reference external" href="https://www.seabird.com/ac-s-spectral-absorption-and-attenuation-sensor/product?id=60762467715">Sea-Bird Scientific ACS</a> data over RS232 and for performing advanced processing with ACS data.</p>
+<p>ACS data are sometimes difficult to work with, particularly for new users without strong optics backgrounds that desire to use the data for empirically derived data products like chlorophyll-a and particulate organic carbon. Some of the target audiences for this package include technicians looking to integrate an ACS into an existing data acquisition system, researchers looking to process prior collected ACS data, and data scientists looking to redistribute ACS data in different formats.
+This package attempts to simplify the process of ingesting and processing ACS data so that users can more quickly get to the science application in their research. Complete descriptions of the code can be found in the <a class="reference external" href="https://github.com/IanTBlack/acspype">GitHub Repository</a> or the <a class="reference external" href="https://iantblack.github.io/acspype/">Documentation</a> website</p>
+<section id="quickstart-examples">
+<h2>Quickstart Examples<a class="headerlink" href="#quickstart-examples" title="Link to this heading"></a></h2>
+<p>A set of examples can be found in the <a class="reference external" href="https://github.com/IanTBlack/acspype/tree/main/examples">acspype GitHub Repository</a>.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>This package is available on the <a class="reference external" href="https://pypi.org/project/acspype/">Python Package Index (PyPI)</a> and can be installed via pip:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">acspype</span></code></p>
+<p><span class="raw-html-m2r"><br></span></p>
+<p>The package is also available on <a class="reference external" href="https://github.com/IanTBlack/acspype">GitHub</a> and can be forked/cloned for development purposes:</p>
+<p><code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/IanTBlack/acspype.git</span></code></p>
+<p><span class="raw-html-m2r"><br></span></p>
+</section>
+<section id="issues-discussions-and-contributions">
+<h2>Issues, Discussions, and Contributions<a class="headerlink" href="#issues-discussions-and-contributions" title="Link to this heading"></a></h2>
+<p>If you experience an issue related to acspype, please use the <a class="reference external" href="https://github.com/IanTBlack/acspype/issues">GitHub Issues</a> page to report it.</p>
+<p>If you would like to propose functionality or discuss best practices, please start a discussion on the <a class="reference external" href="https://github.com/IanTBlack/acspype/discussions">GitHub Discussions</a> page.</p>
+<p>Contributions to acspype are encouraged via GitHub <a class="reference external" href="https://github.com/IanTBlack/acspype/pulls">pull request</a>.
+acspype will be updated on the PyPI as patches and major changes are implemented.</p>
+</section>
+<section id="caution">
+<h2><strong>CAUTION</strong><a class="headerlink" href="#caution" title="Link to this heading"></a></h2>
+<section id="equipment">
+<h3>Equipment<a class="headerlink" href="#equipment" title="Link to this heading"></a></h3>
+<p>If you are using this package to acquire data from an ACS over serial, it is your responsibility to ensure that you are
+using the appropriate equipment (power supply, cable, etc.). Please consult Sea-Bird Scientific for more information about the relevant equipment and
+power requirements needed to acquire data from the ACS.</p>
+<p>If looking for a USB-to-RS232 adapter, the <a class="reference external" href="https://ftdichip.com/products/us232r-100-bulk/">FTDI US232R-100-BULK</a> is recommended.</p>
+</section>
+<section id="serial-processing-limitations">
+<h3>Serial Processing Limitations<a class="headerlink" href="#serial-processing-limitations" title="Link to this heading"></a></h3>
+<p>Not all processing steps offered in acspype can be done in the same thread as the serial data acquisition, particularly the more advanced processing stages that use Xarray to handle wavelength indexes.
+Some steps require linear and cubic interpolation, which may take too much time to perform in between packets.
+Processing up through the temperature-salinity corrected absorption (a_mts) and attenuation (c_mts) can typically be done in the same thread in real-time, but requires accessing ancillary data from another source.
+If ancillary data is not immediately available, then processing up through measured absorption (a_m) and attenuation (c_m) is more appropriate.</p>
+</section>
+</section>
+<section id="additional-information">
+<h2>Additional Information<a class="headerlink" href="#additional-information" title="Link to this heading"></a></h2>
+<p>Additional information about the ACS, the manuals referenced in construction in this package, and the recommended processing and QAQC test can be found in the <a class="reference external" href="https://github.com/IanTBlack/acspype/tree/main/info">info</a> directory of the GitHub repository or on the acspype <a class="reference external" href="https://iantblack.github.io/acspype/">Code Documentation</a> website.</p>
+<section id="processing-steps-and-qaqc">
+<h3>Processing Steps and QAQC<a class="headerlink" href="#processing-steps-and-qaqc" title="Link to this heading"></a></h3>
+<p>Recommended processing steps and QAQC tests are described in <a class="reference external" href="https://github.com/IanTBlack/acspype/blob/main/info/PROCESSING.md">PROCESSING.md</a> document.</p>
+</section>
+<section id="naming-conventions">
+<h3>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading"></a></h3>
+<p>Although <em>acspype</em> tries not enforce strict naming conventions for coordinates, dimensions, and variables, it is strongly recommended that users follow the naming conventions in <a class="reference external" href="https://github.com/IanTBlack/acspype/blob/main/info/NAMING_CONVENTIONS.md">NAMING_CONVENTIONS.md</a>.
+The names put forth in this document attempt to combine <a class="reference external" href="https://cfconventions.org/Data/cf-standard-names/docs/guidelines.html">CF Guidelines</a> and conventions commonly used in literature that utilizes ACS data.</p>
+</section>
+<section id="reference-material">
+<h3>Reference Material<a class="headerlink" href="#reference-material" title="Link to this heading"></a></h3>
+<p>A small list of ACS, absorption, and attenuation related literature is provided in <a class="reference external" href="https://github.com/IanTBlack/acspype/blob/main/info/REFERENCE_MATERIAL.md">REFERENCE_MATERIALS.md</a>.</p>
+</section>
+</section>
+<section id="what-does-acspype-need-from-you-and-sea-bird-scientific">
+<h2>What does acspype need from you (and Sea-Bird Scientific)?<a class="headerlink" href="#what-does-acspype-need-from-you-and-sea-bird-scientific" title="Link to this heading"></a></h2>
+<p>In addition to the physical sensor and a test cable, one who deploys an ACS will also receive a device file (ACS-XXX.dev) and a temperature-salinity coefficient dependence file (TS4.cor) from Sea-Bird Scientific.</p>
+<p>The device file is a text file that contains pure water offsets, delta T values, and the wavelength bins for your specific ACS.
+No two device files are alike, making it critical to keep track of this information in order to perform corrections and compute advanced products.</p>
+<p>The TS4.cor file is a text file that contains empirically derived temperature and salinity correction coefficients needed to correct absorption and attenuation data for changes in temperature and salinity.
+These coefficients have been derived and interpolated to 0.1 nm bins from the original data presented in <a class="reference external" href="https://doi.org/10.1364/AO.45.005294">Sullivan et al. 2006</a>.
+The TS4.cor file received from Sea-Bird Scientific is not unique to the ACS. <a class="reference external" href="https://github.com/IanTBlack/acspype/blob/main/acspype/ts4cor.py">This file has been converted and stored within acspype as a dictionary for convenience</a>.</p>
+</section>
+<section id="what-does-this-package-not-do">
+<h2>What does this package <strong>not</strong> do?<a class="headerlink" href="#what-does-this-package-not-do" title="Link to this heading"></a></h2>
+<p>This package does not provide any functionality for logging data from the ACS. The file or database type is entirely left up to you, the user.
+For file-based logging, <a class="reference external" href="https://docs.python.org/3/library/sqlite3.html">SQLite</a> is recommended, which can be used to store data within multiple tables in a single file.
+For application where concurrency is required, <a class="reference external" href="https://www.psycopg.org/docs/">PostgreSQL</a> is a good option. It provides functionality for handling arrays, which are how ACS data are best represented.
+The ACS produces a significant amount of data, so logging to text (.txt, .csv) or netCDF (.nc) files may best be done as hourly or daily files to prevent excessive memory usage.</p>
+<p>This package does not remove data at any processing stage. In some processing stages, data may be returned as NaN, which could be an expected behaviour for poor quality data.
+For example, if the reference counts for absorption or attenuation are zero, the uncorrected absorption or attenuation at that wavelength bin will become Inf or NaN, because a division by zero occurs within the log calculation. Instances of NaN or Inf should be treated as suspect quality data and be further inspected by the user.
+Because this package heavily relies on Xarray, users should use <a class="reference external" href="https://docs.xarray.dev/en/latest/user-guide/indexing.html">Xarray methods for selecting data</a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="acspype" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="acspype.html" class="btn btn-neutral float-right" title="acspype code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

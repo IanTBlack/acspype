@@ -1,0 +1,383 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.structures &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.structures</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.structures</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains NamedTuple structures that ACS data can be dumped into for easy tracking and exporting.</span>
+<span class="sd">Each NamedTuple is assigned methods that allows for the export of data to a dictionary or to a formatted</span>
+<span class="sd">xarray.Dataset.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">ArrayLike</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">NamedTuple</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+
+<div class="viewcode-block" id="ACSPacket">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ACSPacket">[docs]</a>
+<span class="k">class</span> <span class="nc">ACSPacket</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for representing a time-stamped ACS packet.</span>
+
+<span class="sd">    :param daq_time: The host computer time the packet was acquired.</span>
+<span class="sd">    :param full_packet: The full packet, including the registration bytes and the checksum + pad bytes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">daq_time</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">full_packet</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span> <span class="o">|</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ACSPacket.to_dict">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ACSPacket.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the ACSPacket as a dictionary.</span>
+
+<span class="sd">        :return: A dict representation of the ACSPacket, where keys are attributes and values are attribute values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ACSPacket.to_xarray">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ACSPacket.to_xarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the ACSPacket as an xarray.Dataset.</span>
+
+<span class="sd">        :return: An xarray.Dataset representation of the ACSPacket, where coordinates are the daq_time</span>
+<span class="sd">            and the data variable is the full_packet.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;daq_time&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">daq_time</span><span class="p">})</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;full_packet&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_packet</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ds</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ParsedPacket">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ParsedPacket">[docs]</a>
+<span class="k">class</span> <span class="nc">ParsedPacket</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for representing a parsed ACS packet.</span>
+
+<span class="sd">    :param daq_time: The host computer time the packet was acquired, usually passed from an ACSPacket.</span>
+<span class="sd">    :param record_length: The length of the packet in bytes.</span>
+<span class="sd">    :param packet_type: The type of packet.</span>
+<span class="sd">    :param sn_int: The serial number of the device represented as an integer.</span>
+<span class="sd">    :param a_reference_dark: The dark reference counts for the absorption channel.</span>
+<span class="sd">    :param a_signal_dark: The dark signal counts for the absorption channel.</span>
+<span class="sd">    :param raw_external_temperature: The raw external temperature reading in counts.</span>
+<span class="sd">    :param raw_internal_temperature: The raw internal temperature reading in counts.</span>
+<span class="sd">    :param c_reference_dark: The dark reference counts for the attenuation channel.</span>
+<span class="sd">    :param c_signal_dark: The dark signal counts for the attenuation channel.</span>
+<span class="sd">    :param elapsed_time: The elapsed time since power was supplied to the ACS, in milliseconds.</span>
+<span class="sd">    :param number_of_wavelengths: The number of wavelengths for each channel.</span>
+<span class="sd">    :param c_reference: The attenuation reference in counts.</span>
+<span class="sd">    :param a_reference: The absorption reference in counts.</span>
+<span class="sd">    :param c_signal: The attenuation signal in counts.</span>
+<span class="sd">    :param a_signal: The absorption signal in counts.</span>
+<span class="sd">    :param checksum: The checksum of the packet.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">daq_time</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">record_length</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">packet_type</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1"># reserved_1: int  # Commented out for unlikely reimplementation in the future.</span>
+    <span class="n">sn_int</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">a_reference_dark</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1"># raw_pressure: int</span>
+    <span class="n">a_signal_dark</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">raw_external_temperature</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">raw_internal_temperature</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">c_reference_dark</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">c_signal_dark</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">elapsed_time</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1"># reserved_2: int</span>
+    <span class="n">number_of_wavelengths</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">c_reference</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">a_reference</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">c_signal</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">a_signal</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">checksum</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="ParsedPacket.to_dict">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ParsedPacket.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the ParsedPacket as a dictionary.</span>
+
+<span class="sd">        :return: A dict representation of the ParsedPacket, where keys are attributes and values are attribute values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ParsedPacket.to_xarray">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.ParsedPacket.to_xarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the ParsedPacket as an xr.Dataset.</span>
+
+<span class="sd">        :return: An xarray.Dataset representation of the ParsedPacket.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;daq_time&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">daq_time</span><span class="p">],</span>
+                               <span class="s1">&#39;wavelength_index&#39;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_wavelengths</span><span class="p">))})</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;record_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">record_length</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;packet_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">packet_type</span>
+        <span class="c1"># ds[&#39;reserved_1&#39;] = self.reserved_1</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;sn_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sn_int</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_reference_dark&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_reference_dark</span>
+        <span class="c1"># ds[&#39;raw_pressure&#39;] = self.raw_pressure</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_signal_dark&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_signal_dark</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;raw_external_temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_external_temperature</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;raw_internal_temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_internal_temperature</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_reference_dark&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_reference_dark</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_signal_dark&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_signal_dark</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;elapsed_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">elapsed_time</span>
+        <span class="c1"># ds[&#39;reserved_2&#39;] = self.reserved_2</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;number_of_wavelengths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_wavelengths</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;wavelength_index&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_reference</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_reference&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;wavelength_index&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_reference</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_signal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;wavelength_index&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_signal</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_signal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;wavelength_index&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_signal</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;checksum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">checksum</span>
+        <span class="k">return</span> <span class="n">ds</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DeviceCalibratedPacket">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.DeviceCalibratedPacket">[docs]</a>
+<span class="k">class</span> <span class="nc">DeviceCalibratedPacket</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for representing a device file-calibrated ACS packet.</span>
+
+<span class="sd">    :param daq_time: The host computer time the packet was acquired, usually passed from an ParsedPacket.</span>
+<span class="sd">    :param a_wavelength: The wavelengths for the absorption channel.</span>
+<span class="sd">    :param c_wavelength: The wavelengths for the attenuation channel.</span>
+<span class="sd">    :param sn_hexdec: The serial number of the device represented as a hexadecimal string.</span>
+<span class="sd">    :param serial_number: The serial number of the device represented as a string.</span>
+<span class="sd">    :param internal_temperature: The internal temperature of the device in degrees Celsius.</span>
+<span class="sd">    :param external_temperature: The external temperature of the device in degrees Celsius.</span>
+<span class="sd">    :param a_uncorrected: The uncorrected absorption signal in inverse meters.</span>
+<span class="sd">    :param c_uncorrected: The uncorrected attenuation signal in inverse meters.</span>
+<span class="sd">    :param discontinuity_index: The index of the discontinuity in both channels.</span>
+<span class="sd">    :param a_discontinuity_offset: The offset for the absorption channel discontinuity.</span>
+<span class="sd">    :param c_discontinuity_offset: The offset for the attenuation channel discontinuity.</span>
+<span class="sd">    :param a_m_discontinuity: The absorption coefficient without discontinuity correction applied.</span>
+<span class="sd">    :param c_m_discontinuity: The attenuation coefficient without discontinuity correction applied.</span>
+<span class="sd">    :param a_m: The measured absorption coefficient in inverse meters.</span>
+<span class="sd">    :param c_m: The measured attenuation coefficient in inverse meters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">daq_time</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">a_wavelength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">c_wavelength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">sn_hexdec</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">serial_number</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">internal_temperature</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">external_temperature</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">a_uncorrected</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">c_uncorrected</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">discontinuity_index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">a_discontinuity_offset</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">c_discontinuity_offset</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">a_m_discontinuity</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">c_m_discontinuity</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">a_m</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">c_m</span><span class="p">:</span> <span class="n">ArrayLike</span>
+
+<div class="viewcode-block" id="DeviceCalibratedPacket.to_dict">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.DeviceCalibratedPacket.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the DeviceCalibratedPacket as a dictionary.</span>
+
+<span class="sd">        :return: A dict representation of the DeviceCalibratedPacket, where keys are attrs and values are attr values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DeviceCalibratedPacket.to_xarray">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.DeviceCalibratedPacket.to_xarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the DeviceCalibratedPacket as an xarray.Dataset.</span>
+
+<span class="sd">        :return: An xarray.Dataset representation of the DeviceCalibratedPacket.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;daq_time&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">daq_time</span><span class="p">],</span>
+                               <span class="s1">&#39;a_wavelength&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span>
+                               <span class="s1">&#39;c_wavelength&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)})</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;sn_hexdec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sn_hexdec</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;serial_number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;internal_temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_temperature</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;external_temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_temperature</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_uncorrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_uncorrected</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_uncorrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_uncorrected</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;discontinuity_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discontinuity_index</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_discontinuity_offset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_discontinuity_offset</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_discontinuity_offset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_discontinuity_offset</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_m_discontinuity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_m_discontinuity</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_m_discontinuity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_m_discontinuity</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_m&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_m</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_m&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_m</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">ds</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TSCorrectedPacket">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.TSCorrectedPacket">[docs]</a>
+<span class="k">class</span> <span class="nc">TSCorrectedPacket</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for representing a temperature and salinity-corrected ACS packet.</span>
+
+<span class="sd">    :param daq_time: The host computer time the packet was acquired, usually passed from a DeviceCalibratedPacket.</span>
+<span class="sd">    :param a_wavelength: The wavelengths for the absorption channel.</span>
+<span class="sd">    :param c_wavelength: The wavelengths for the attenuation channel.</span>
+<span class="sd">    :param temperature: The temperature of the water in degrees Celsius.</span>
+<span class="sd">    :param salinity: The salinity of the water in practical salinity units (PSU).</span>
+<span class="sd">    :param a_mts: The temperature and salinity-corrected absorption coefficient in inverse meters.</span>
+<span class="sd">    :param c_mts: The temperature and salinity-corrected attenuation coefficient in inverse meters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">daq_time</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">a_wavelength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">c_wavelength</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">salinity</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">a_mts</span><span class="p">:</span> <span class="n">ArrayLike</span>
+    <span class="n">c_mts</span><span class="p">:</span> <span class="n">ArrayLike</span>
+
+<div class="viewcode-block" id="TSCorrectedPacket.to_dict">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.TSCorrectedPacket.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the TSCorrectedPacket as a dictionary.</span>
+
+<span class="sd">        :return: A dict representation of the TSCorrectedPacket, where keys are attributes and values are attr values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TSCorrectedPacket.to_xarray">
+<a class="viewcode-back" href="../../acspype.html#acspype.structures.TSCorrectedPacket.to_xarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export the TSCorrectedPacket as an xarray.Dataset.</span>
+
+<span class="sd">        :return: An xarray.Dataset representation of the TSCorrectedPacket.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;daq_time&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">daq_time</span><span class="p">,</span>
+                               <span class="s1">&#39;a_wavelength&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span>
+                               <span class="s1">&#39;c_wavelength&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)})</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;salinity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">salinity</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;a_mts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">a_mts</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s1">&#39;c_mts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;daq_time&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">c_mts</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">ds</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

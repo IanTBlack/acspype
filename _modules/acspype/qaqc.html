@@ -1,0 +1,555 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.qaqc &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.qaqc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.qaqc</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for ACS data quality assurance and quality control (QAQC).</span>
+<span class="sd">QAQC tests use QARTOD-style flagging and meanings, unless an alternative is specified.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">NDArray</span>
+<span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">calcsize</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+<span class="kn">from</span> <span class="nn">acspype.core</span> <span class="kn">import</span> <span class="p">(</span><span class="n">PACKET_HEAD</span><span class="p">,</span> <span class="n">PACKET_TAIL</span><span class="p">,</span> <span class="n">LPR</span><span class="p">,</span> <span class="n">PACKET_REGISTRATION</span><span class="p">,</span> <span class="n">PAD_BYTE</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">acspype.dev</span> <span class="kn">import</span> <span class="n">ACSDev</span>
+<span class="kn">from</span> <span class="nn">acspype.packet</span> <span class="kn">import</span> <span class="n">unpack_packet</span>
+
+
+<div class="viewcode-block" id="FLAG">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.FLAG">[docs]</a>
+<span class="k">class</span> <span class="nc">FLAG</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flag values for the ACS QAQC tests. The following flags follow the QARTOD flag meanings.</span>
+
+<span class="sd">    :param OK: Indicates that the data passed the test.</span>
+<span class="sd">    :param PASS: Indicates that the data passed the test.</span>
+<span class="sd">    :param NOT_EVALUATED: Indicates that the data was not evaluated. Appearance of this flag indicates a problem with</span>
+<span class="sd">        the test function and not the data. It defeats the purpose of running a QAQC if the data is not evaluated.</span>
+<span class="sd">    :param SUSPECT: Indicates that the data is suspect.</span>
+<span class="sd">        This flag indicates that the data should be reviewed more closely.</span>
+<span class="sd">    :param HIGH_INTEREST: Indicates that the data is of high interest. Although it uses the same flag value as SUSPECT,</span>
+<span class="sd">        the context of the test and environmental conditions should be considered when reviewing the data.</span>
+<span class="sd">    :param FAIL: Indicates that the data failed the test conditions.</span>
+<span class="sd">    :param BAD: Indicates that the data failed the test conditions.</span>
+<span class="sd">    :param MISSING_DATA: Indicates that the input data or ancillary data is missing (NaN), resulting in data that</span>
+<span class="sd">        cannot be used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">OK</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">PASS</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">NOT_EVALUATED</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">SUSPECT</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">HIGH_INTEREST</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">FAIL</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">BAD</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">MISSING_DATA</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span></div>
+
+
+
+<div class="viewcode-block" id="gap_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.gap_test">[docs]</a>
+<span class="k">def</span> <span class="nf">gap_test</span><span class="p">(</span><span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+             <span class="n">time_stmp</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+             <span class="n">record_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+             <span class="n">buffer_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">time_inc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess the gap between the current time and the timestamp of the packet.</span>
+<span class="sd">    This is a modified form of the generic QARTOD gap test.</span>
+
+<span class="sd">    :param now: The time at which the test is being run. Must be compatibile with a datetime.datetime object.</span>
+<span class="sd">    :param time_stmp: The timestamp of the packet. Must be compatible with a datetime.datetime object.</span>
+<span class="sd">    :param buffer_length: The number of bytes in the serial buffer. If None, the corresponding section of the test is</span>
+<span class="sd">        skipped. Determined through the protected attribute &quot;_buffer&quot; in the ACSStream class.</span>
+<span class="sd">    :param record_length: The record length of the packet. This is the expected number of bytes in the packet that is</span>
+<span class="sd">        within each ACS packet header.</span>
+<span class="sd">    :param time_inc: The time increment to use for assessing timestamp gaps. Default is 0.25 seconds, which is the</span>
+<span class="sd">        approximate time that it takes the ACS to send a complete packet.</span>
+<span class="sd">    :return: A flag indicating pass or fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">now</span> <span class="o">-</span> <span class="n">time_stmp</span> <span class="o">&gt;</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">time_inc</span><span class="p">):</span>  <span class="c1"># Defined in QARTOD Ocean Optics Manual.</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">elif</span> <span class="n">buffer_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">buffer_length</span> <span class="o">&gt;</span> <span class="n">record_length</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            This is a custom take on the gap test. </span>
+<span class="sd">            If for some reason the buffer length exceeds the previous frame length, that would indicate that</span>
+<span class="sd">            the buffer is filling up faster than the packets can be unpacked. This could ultimately result in the </span>
+<span class="sd">            timestamp of the value being off by one or multiples of 250ms periods, depending on the buffer length. </span>
+<span class="sd">            This could also indicate an issue with the timing of the data acquisition thread.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span></div>
+
+
+
+<div class="viewcode-block" id="syntax_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.syntax_test">[docs]</a>
+<span class="k">def</span> <span class="nf">syntax_test</span><span class="p">(</span><span class="n">full_packet</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Test the syntax of an ACS packet.</span>
+<span class="sd">    This test expands on the QARTOD syntax test.</span>
+<span class="sd">    Failure of this test indicates that the packet is malformed or incomplete.</span>
+
+<span class="sd">    :param full_packet: A full packet from the ACS, including registration bytes and the pad byte.</span>
+<span class="sd">        See acspype.core for the static syntax of the header and tail of each packet. The unpack_packet function in the</span>
+<span class="sd">        acspype.packet module shows how to dynamically unpack the packet using the packet header.</span>
+<span class="sd">    :return: Flag indicating pass or fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">raw</span><span class="p">,</span> <span class="n">checksum</span> <span class="o">=</span> <span class="n">unpack_packet</span><span class="p">(</span><span class="n">full_packet</span><span class="p">)</span>
+    <span class="n">remaining_packet_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">13</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">full_packet_descriptor</span> <span class="o">=</span> <span class="n">PACKET_HEAD</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">remaining_packet_size</span><span class="si">}</span><span class="s2">H&quot;</span> <span class="o">+</span> <span class="n">PACKET_TAIL</span>
+    <span class="n">expected_length</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">full_packet</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">PACKET_REGISTRATION</span><span class="p">)]</span> <span class="o">!=</span> <span class="n">PACKET_REGISTRATION</span><span class="p">:</span>  <span class="c1"># If no packet registration...</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">elif</span> <span class="n">full_packet</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">PAD_BYTE</span><span class="p">):</span>  <span class="c1"># If no pad byte...</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">elif</span> <span class="n">calcsize</span><span class="p">(</span><span class="n">full_packet_descriptor</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_packet</span><span class="p">):</span>  <span class="c1"># If the descriptor doesn&#39;t match the packet length...</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">full_packet</span><span class="p">)</span> <span class="o">-</span> <span class="n">calcsize</span><span class="p">(</span><span class="n">PACKET_TAIL</span><span class="p">)</span> <span class="o">!=</span> <span class="n">expected_length</span><span class="p">:</span>  <span class="c1"># If the expected record length doesn&#39;t match...</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+    <span class="k">elif</span> <span class="nb">sum</span><span class="p">(</span><span class="n">full_packet</span><span class="p">[:</span><span class="o">-</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PACKET_TAIL</span><span class="p">)])</span> <span class="o">&gt;=</span> <span class="mi">65536</span><span class="p">:</span>  <span class="c1"># If the checksum doesn&#39;t add up....</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="o">!=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">full_packet</span><span class="p">[:</span><span class="o">-</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PACKET_TAIL</span><span class="p">)])</span> <span class="o">%</span> <span class="mi">65536</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span>
+    <span class="k">elif</span> <span class="nb">sum</span><span class="p">(</span><span class="n">full_packet</span><span class="p">[:</span><span class="o">-</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PACKET_TAIL</span><span class="p">)])</span> <span class="o">&lt;</span> <span class="mi">65536</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">checksum</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">full_packet</span><span class="p">[:</span><span class="o">-</span><span class="n">calcsize</span><span class="p">(</span><span class="n">PACKET_TAIL</span><span class="p">)])):</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span></div>
+
+
+
+<div class="viewcode-block" id="elapsed_time_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.elapsed_time_test">[docs]</a>
+<span class="k">def</span> <span class="nf">elapsed_time_test</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">fail_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+                      <span class="n">suspect_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess the elapsed time since the instrument was turned on. The elapsed time is always output from the ACS as the</span>
+<span class="sd">    number of milliseconds since the instrument first received power.</span>
+<span class="sd">    This is a custom test that is based on information in the ACS manual.</span>
+<span class="sd">    Generally, the ACS takes 5-10 minutes to warm-up. Waiting this long may not be practical in some situations.</span>
+<span class="sd">    It is recommended to flag the first minute of data as poor quality and then minutes 2-3 as suspect in applications</span>
+<span class="sd">    where the ACS is on for less than 10 minutes at a time.</span>
+
+<span class="sd">    :param elapsed_time: The elapsed time parsed from an ACS packet.</span>
+<span class="sd">        Represents the number of milliseconds that have passed since the ACS was turned on.</span>
+<span class="sd">    :param fail_threshold: The amount of time, from initial instrument power on in milliseconds, where data is</span>
+<span class="sd">        considered to be of poor quality.</span>
+<span class="sd">    :param suspect_threshold: The amount of time in milliseconds between the fail and</span>
+<span class="sd">        suspect threshold where data is considered to be suspect.</span>
+<span class="sd">    :return: Flag indicating pass, suspect, or fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">elapsed_time</span> <span class="o">&lt;=</span> <span class="n">fail_threshold</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+        <span class="k">elif</span> <span class="n">fail_threshold</span> <span class="o">&lt;</span> <span class="n">elapsed_time</span> <span class="o">&lt;=</span> <span class="n">suspect_threshold</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">elapsed_time</span> <span class="o">&lt;=</span> <span class="n">fail_threshold</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">elapsed_time</span> <span class="o">&gt;</span> <span class="n">fail_threshold</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">elapsed_time</span> <span class="o">&lt;=</span> <span class="n">suspect_threshold</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">elapsed_time</span> <span class="o">&gt;</span> <span class="n">suspect_threshold</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed_time</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;fail_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fail_threshold</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;suspect_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">suspect_threshold</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;threshold_units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;milliseconds&#39;</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;elapsed_time_test&#39;</span>
+        <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="internal_temperature_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.internal_temperature_test">[docs]</a>
+<span class="k">def</span> <span class="nf">internal_temperature_test</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                              <span class="n">dev</span><span class="p">:</span> <span class="n">ACSDev</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess the internal temperature of the ACS. This is a custom test that is based on information within the manual</span>
+<span class="sd">    and the device file. The ACS is calibrated at specific temperature bins, which are listed in the device file.</span>
+<span class="sd">    Typically, the internal temperature correction is linearly interpolated from the delta T values in the device file.</span>
+<span class="sd">    If the internal temperature of the sensor exceeds the range of those temperature bins,</span>
+<span class="sd">    then data are considered to be suspect.</span>
+
+<span class="sd">    :param internal_temperature: The internal temperature of the ACS.</span>
+<span class="sd">    :param dev: The device file for the ACS as an ACSDev object.</span>
+<span class="sd">    :return: Flag indicating pass or suspect.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">min_t</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">tbin</span><span class="p">)</span>
+    <span class="n">max_t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">tbin</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">min_t</span> <span class="o">&lt;=</span> <span class="n">internal_temperature</span> <span class="o">&lt;=</span> <span class="n">max_t</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">min_t</span> <span class="o">&gt;</span> <span class="n">internal_temperature</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">max_t</span> <span class="o">&lt;</span> <span class="n">internal_temperature</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">min_t</span> <span class="o">&lt;=</span> <span class="n">internal_temperature</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">max_t</span> <span class="o">&gt;=</span> <span class="n">internal_temperature</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">internal_temperature</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;minimum_temperature_bin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_t</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;maximum_temperature_bin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_t</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;temperature_bin_units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;degrees Celsius&#39;</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;internal_temperature_test&#39;</span>
+        <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="inf_nan_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.inf_nan_test">[docs]</a>
+<span class="k">def</span> <span class="nf">inf_nan_test</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess if the uncorrected data contains any NaN or Inf values. This is a custom test that can be used to identify</span>
+<span class="sd">    instances where the reference counts are zero, which produces mathematical errors in the conversion to geophysical</span>
+<span class="sd">    units. Zero reference counts happen occasionally and can probably be discarded during analysis. Repeated samples</span>
+<span class="sd">    containing zero reference counts may indicate a problem with the instrument.</span>
+
+<span class="sd">    :param uncorrected: Uncorrected a or c data.</span>
+<span class="sd">    :return: Flag indicating pass or fail.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">))</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">uncorrected</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uncorrected</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;inf_nan_test&#39;</span>
+        <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="gross_range_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.gross_range_test">[docs]</a>
+<span class="k">def</span> <span class="nf">gross_range_test</span><span class="p">(</span><span class="n">mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                     <span class="n">sensor_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.005</span><span class="p">,</span> <span class="n">sensor_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.00</span><span class="p">,</span>
+                     <span class="n">op_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span> <span class="n">op_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">8.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess if the TS-corrected data are within the limitations of the instrument. From the ACS manual, the valid range</span>
+<span class="sd">    of the sensor is 0-10 m^-1.</span>
+
+<span class="sd">    The return is a set of flags in the same shape as the input data. Note that fail flags may occur in the</span>
+<span class="sd">    red wavelengths of absorption spectrum consecutively toward the end of each spectrum, which does not necessarily</span>
+<span class="sd">    make the entire spectrum of poor quality. Users should consider the pass/fail state of the rest of the spectrum</span>
+<span class="sd">    before making a decision on the validity of the data.</span>
+
+<span class="sd">    :param mts: TS-corrected absorption or attenuation.</span>
+<span class="sd">    :param sensor_min: The minimum sensor range. Default is -0.005, which is effectively 0 as described in the manual.</span>
+<span class="sd">    :param sensor_max: The maximum sensor range. Default is 10.00, which is the maximum range of the ACS.</span>
+<span class="sd">    :param op_min: Operator set minimum for flagging suspect data. Default is 0.001</span>
+<span class="sd">    :param op_max: Operator set maximum for flagging suspect data. Default is 8.5.</span>
+<span class="sd">    :return: Flag indicating pass, fail, or suspect.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Functionality for singletons not yet implemented.&quot;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">mts</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&gt;</span> <span class="n">sensor_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&lt;</span> <span class="n">sensor_max</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&gt;</span> <span class="n">op_min</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&lt;</span> <span class="n">sensor_min</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&lt;</span> <span class="n">op_max</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&gt;</span> <span class="n">sensor_max</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&lt;=</span> <span class="n">op_min</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&gt;=</span> <span class="n">op_max</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;sensor_min&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensor_min</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;sensor_max&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sensor_max</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;operator_min&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op_min</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;operator_max&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">op_max</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;threshold_units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m^-1&#39;</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;gross_range_test&#39;</span>
+        <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="discontinuity_offset_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.discontinuity_offset_test">[docs]</a>
+<span class="k">def</span> <span class="nf">discontinuity_offset_test</span><span class="p">(</span><span class="n">discontinuity_offset</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                              <span class="n">median_multiplier</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                              <span class="n">fail_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flag a discontinuity offset value as pass or suspect. This is a custom test that uses a multiple of the median</span>
+<span class="sd">    of the offset to assess if the offset is acceptable.</span>
+<span class="sd">    Spectra with significantly large discontinuity offsets are likely to be of poor quality, but should be assessed</span>
+<span class="sd">    using other QAQC tests before being discarded, such as the a_gt_c_test, which may likely confirm the quality of</span>
+<span class="sd">    the data.</span>
+
+<span class="sd">    This function is only intended for use with xarray.DataArray objects.</span>
+
+<span class="sd">    :param discontinuity_offset: The discontinuity offset value for absorption or attenuation.</span>
+<span class="sd">    :param median_multiplier: The multiplier of the median. Values within the multiplier range are deemed acceptable.</span>
+<span class="sd">    :param fail_threshold: The threshold for flagging the offset as fail.</span>
+<span class="sd">        Default is 10, or the maximum value of the ACS range.</span>
+<span class="sd">    :return: The flag of the discontinuity offset, which maintains the same size as the time dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">discontinuity_offset</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">_median</span> <span class="o">=</span> <span class="n">discontinuity_offset</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">skipna</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Use the timeseries median to assess the offset.</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">discontinuity_offset</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_median</span><span class="p">)</span> <span class="o">*</span> <span class="n">median_multiplier</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">discontinuity_offset</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">fail_threshold</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">discontinuity_offset</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;median_multiplier&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">median_multiplier</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;fail_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fail_threshold</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;suspect_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_median</span><span class="p">)</span> <span class="o">*</span> <span class="n">median_multiplier</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;threshold_units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m^-1&#39;</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;discontinuity_offset_test&#39;</span>
+    <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="blanket_gross_range_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.blanket_gross_range_test">[docs]</a>
+<span class="k">def</span> <span class="nf">blanket_gross_range_test</span><span class="p">(</span><span class="n">nd_gross_range_results</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                             <span class="n">wavelength_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                             <span class="n">suspect_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                             <span class="n">fail_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                             <span class="n">include_suspect_flags</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess the validity of the gross range test results as a blanket flag for the spectra.</span>
+<span class="sd">    This is an experimental test.</span>
+<span class="sd">    The test considers the number of wavelength bins that were previously flagged as suspect or fail for exceeding the</span>
+<span class="sd">    gross range limits. If X percent of wavelength bins were flagged as fail (or fail/suspect) and exceed the</span>
+<span class="sd">    user-defined fail threshold, then the entire spectrum is flagged as fail. If the percentage is between the suspect</span>
+<span class="sd">    and fail thresholds then the spectra is flagged as suspect.</span>
+<span class="sd">    The threshold represents the percentage threshold between 0-1 (0-100%).</span>
+
+<span class="sd">    :param nd_gross_range_results: The N-dimensional results from the gross range test. Effectively a single flag for</span>
+<span class="sd">        every value along the time/wavelength dimension.</span>
+<span class="sd">    :param wavelength_dim: The wavelength dimension of the results.</span>
+<span class="sd">    :param suspect_threshold: The percentage threshold for suspect data.</span>
+<span class="sd">    :param fail_threshold: The percentage threshold for fail data.</span>
+<span class="sd">    :param include_suspect_flags: If True, include suspect flags along the spectra in the total fail.</span>
+<span class="sd">    :return: A blanket flag for the spectra, which maintains the same shape as the time dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fail_threshold</span> <span class="o">&lt;</span> <span class="n">suspect_threshold</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;fail_threshold must be greater than suspect_threshold.&#39;</span><span class="p">)</span>
+
+    <span class="n">num_wvls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nd_gross_range_results</span><span class="p">[</span><span class="n">wavelength_dim</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">include_suspect_flags</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">_flags_bool</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">nd_gross_range_results</span> <span class="o">==</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">nd_gross_range_results</span> <span class="o">==</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_flags_bool</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nd_gross_range_results</span> <span class="o">==</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">_flags_bool_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">_flags_bool</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">_flags_bool_sum</span> <span class="o">/</span> <span class="n">num_wvls</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">nd_gross_range_results</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">ratio</span> <span class="o">&lt;</span> <span class="n">suspect_threshold</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ratio</span> <span class="o">&gt;</span> <span class="n">fail_threshold</span><span class="p">),</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ratio</span> <span class="o">&lt;</span> <span class="n">fail_threshold</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">FAIL</span><span class="p">)</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">ratio</span> <span class="o">&gt;=</span> <span class="n">suspect_threshold</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nd_gross_range_results</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;suspect_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">suspect_threshold</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;fail_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fail_threshold</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;threshold_units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;m^-1&#39;</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;includes_suspect_flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">include_suspect_flags</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;blanket_gross_range_test&#39;</span>
+    <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="a_gt_c_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.a_gt_c_test">[docs]</a>
+<span class="k">def</span> <span class="nf">a_gt_c_test</span><span class="p">(</span><span class="n">absorption</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">attenuation</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assess if the absorption is greater than the attenuation. Having absorption (a) greater than attenuation (c)</span>
+<span class="sd">    is (mostly) impossible. This test can be run on uncorrected data to help assess sensor drift.</span>
+<span class="sd">    It is also recommended that this test be run on scattering corrected absorption with ts-corrected</span>
+<span class="sd">    attenuation. This test is not related to QARTOD, but is a custom test based on reality checks in the</span>
+<span class="sd">    ACS protocol document.</span>
+<span class="sd">    This test is only intended for use with xarray.DataArray objects.</span>
+
+<span class="sd">    :param absorption: Absorption data. Either uncorrected a or a_mts_scatcorr.</span>
+<span class="sd">    :param attenuation: Attenuation data. Either uncorrected c or ts corrected c.</span>
+<span class="sd">    :return: Flag indicating if absorption is greater than attenuation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">absorption</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">absorption</span> <span class="o">&lt;=</span> <span class="n">attenuation</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">absorption</span> <span class="o">&gt;</span> <span class="n">attenuation</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">absorption</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">attenuation</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;a_gt_c_test&#39;</span>
+    <span class="k">return</span> <span class="n">flags</span></div>
+
+
+
+<div class="viewcode-block" id="rolling_variance_test">
+<a class="viewcode-back" href="../../acspype.html#acspype.qaqc.rolling_variance_test">[docs]</a>
+<span class="k">def</span> <span class="nf">rolling_variance_test</span><span class="p">(</span><span class="n">mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                          <span class="n">use_mean</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;rolling&#39;</span><span class="p">,</span>
+                          <span class="n">window_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+                          <span class="n">exceedance_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+                          <span class="n">min_periods</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a rolling variance test to a measured absorption or attenuation coefficient.</span>
+
+<span class="sd">    :param mts: The measured absorption or attenuation coefficient. For absorption the recommendation is to use</span>
+<span class="sd">        a scattering corrected measurement (e.g. a_mts_proportional).</span>
+<span class="sd">        For attenuation the recommendation is to us a TS-corrected measurement.</span>
+<span class="sd">    :param use_mean: Indicates whether to use the timeseries mean or a rolling window mean along the time dimension.</span>
+<span class="sd">        If &#39;rolling&#39;, the rolling mean at each wavelength bin along the window size is used.</span>
+<span class="sd">        If &#39;timeseries&#39;, the timeseries mean at each wavelength bin is used.</span>
+<span class="sd">    :param window_size: The centered window size for the variance window</span>
+<span class="sd">        and for the mean window, if use_mean = &#39;timeseries&#39;.</span>
+<span class="sd">    :param exceedance_threshold: The percentage of the mean that the variance must exceed to be flagged as suspect.</span>
+<span class="sd">        Represented as a value between 0-1 (0-100%).</span>
+<span class="sd">    :param min_periods: The minimum number of periods to apply this test. Only applies if use_mean = &#39;rolling&#39;.</span>
+<span class="sd">        Same functionality as the min_periods argument for xarray.DataArray.rolling. The default is 1, which generally</span>
+<span class="sd">        means that this test is not applied to the first window in the timeseries.</span>
+<span class="sd">    :return: A flag indicating SUSPECT or PASS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">use_mean</span> <span class="o">=</span> <span class="n">use_mean</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">use_mean</span> <span class="o">==</span> <span class="s1">&#39;timeseries&#39;</span><span class="p">:</span>
+        <span class="n">m_mean</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">skipna</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mean_type</span> <span class="o">=</span> <span class="s1">&#39;timeseries_mean&#39;</span>
+    <span class="k">elif</span> <span class="n">use_mean</span> <span class="o">==</span> <span class="s1">&#39;rolling&#39;</span><span class="p">:</span>
+        <span class="n">m_mean</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="n">min_periods</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">skipna</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mean_type</span> <span class="o">=</span> <span class="s1">&#39;rolling_mean&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;use_mean must be &#39;timeseries&#39; or &#39;rolling&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="n">m_var</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">window_size</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_periods</span><span class="o">=</span><span class="n">min_periods</span><span class="p">)</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">skipna</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Rolling variance.</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">mts</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">NOT_EVALUATED</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">m_var</span> <span class="o">&lt;</span> <span class="n">exceedance_threshold</span> <span class="o">*</span> <span class="n">m_mean</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">SUSPECT</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">m_var</span> <span class="o">&gt;=</span> <span class="n">exceedance_threshold</span> <span class="o">*</span> <span class="n">m_mean</span><span class="p">,</span> <span class="n">FLAG</span><span class="o">.</span><span class="n">PASS</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes to the flags if an xarray.DataArray.</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;rolling_variance_test_window_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">window_size</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;exceedance_threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">exceedance_threshold</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;mean_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mean_type</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;min_periods&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">min_periods</span>
+    <span class="n">flags</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;test_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;rolling_variance_test&#39;</span>
+    <span class="k">return</span> <span class="n">flags</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

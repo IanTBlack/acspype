@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="acspype README" href="readme_link.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">acspype</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="acspype">
+<h1>acspype<a class="headerlink" href="#acspype" title="Link to this heading"></a></h1>
+<p>Welcome to acspype’s documentation!</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="readme_link.html">acspype README</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#quickstart-examples">Quickstart Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#issues-discussions-and-contributions">Issues, Discussions, and Contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#caution"><strong>CAUTION</strong></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme_link.html#equipment">Equipment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme_link.html#serial-processing-limitations">Serial Processing Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#additional-information">Additional Information</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="readme_link.html#processing-steps-and-qaqc">Processing Steps and QAQC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme_link.html#naming-conventions">Naming Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="readme_link.html#reference-material">Reference Material</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#what-does-acspype-need-from-you-and-sea-bird-scientific">What does acspype need from you (and Sea-Bird Scientific)?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="readme_link.html#what-does-this-package-not-do">What does this package <strong>not</strong> do?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="acspype.html">acspype code</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.stream">acspype.stream module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream"><code class="docutils literal notranslate"><span class="pre">ACSStream</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.BAUDRATE"><code class="docutils literal notranslate"><span class="pre">ACSStream.BAUDRATE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.BYTESIZE"><code class="docutils literal notranslate"><span class="pre">ACSStream.BYTESIZE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.FLOWCONTROL"><code class="docutils literal notranslate"><span class="pre">ACSStream.FLOWCONTROL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.PARITY"><code class="docutils literal notranslate"><span class="pre">ACSStream.PARITY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.STOPBITS"><code class="docutils literal notranslate"><span class="pre">ACSStream.STOPBITS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.TIMEOUT"><code class="docutils literal notranslate"><span class="pre">ACSStream.TIMEOUT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.calibrate_packet"><code class="docutils literal notranslate"><span class="pre">ACSStream.calibrate_packet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.clear_packet_buffer"><code class="docutils literal notranslate"><span class="pre">ACSStream.clear_packet_buffer()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.clear_serial_buffers"><code class="docutils literal notranslate"><span class="pre">ACSStream.clear_serial_buffers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.connect"><code class="docutils literal notranslate"><span class="pre">ACSStream.connect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.disconnect"><code class="docutils literal notranslate"><span class="pre">ACSStream.disconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.find_packet"><code class="docutils literal notranslate"><span class="pre">ACSStream.find_packet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.parse_packet"><code class="docutils literal notranslate"><span class="pre">ACSStream.parse_packet()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.read_stream"><code class="docutils literal notranslate"><span class="pre">ACSStream.read_stream()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.reset_serial"><code class="docutils literal notranslate"><span class="pre">ACSStream.reset_serial()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.stream.ACSStream.ts_correct_packet"><code class="docutils literal notranslate"><span class="pre">ACSStream.ts_correct_packet()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.structures">acspype.structures module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.structures.ACSPacket"><code class="docutils literal notranslate"><span class="pre">ACSPacket</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ACSPacket.daq_time"><code class="docutils literal notranslate"><span class="pre">ACSPacket.daq_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ACSPacket.full_packet"><code class="docutils literal notranslate"><span class="pre">ACSPacket.full_packet</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ACSPacket.to_dict"><code class="docutils literal notranslate"><span class="pre">ACSPacket.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ACSPacket.to_xarray"><code class="docutils literal notranslate"><span class="pre">ACSPacket.to_xarray()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.a_discontinuity_offset"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.a_discontinuity_offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.a_m"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.a_m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.a_m_discontinuity"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.a_m_discontinuity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.a_uncorrected"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.a_uncorrected</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.a_wavelength"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.a_wavelength</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.c_discontinuity_offset"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.c_discontinuity_offset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.c_m"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.c_m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.c_m_discontinuity"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.c_m_discontinuity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.c_uncorrected"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.c_uncorrected</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.c_wavelength"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.c_wavelength</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.daq_time"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.daq_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.discontinuity_index"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.discontinuity_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.external_temperature"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.external_temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.internal_temperature"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.internal_temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.serial_number"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.serial_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.sn_hexdec"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.sn_hexdec</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.to_dict"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.DeviceCalibratedPacket.to_xarray"><code class="docutils literal notranslate"><span class="pre">DeviceCalibratedPacket.to_xarray()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket"><code class="docutils literal notranslate"><span class="pre">ParsedPacket</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.a_reference"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.a_reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.a_reference_dark"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.a_reference_dark</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.a_signal"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.a_signal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.a_signal_dark"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.a_signal_dark</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.c_reference"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.c_reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.c_reference_dark"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.c_reference_dark</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.c_signal"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.c_signal</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.c_signal_dark"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.c_signal_dark</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.checksum"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.checksum</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.daq_time"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.daq_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.elapsed_time"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.elapsed_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.number_of_wavelengths"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.number_of_wavelengths</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.packet_type"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.packet_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.raw_external_temperature"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.raw_external_temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.raw_internal_temperature"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.raw_internal_temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.record_length"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.record_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.sn_int"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.sn_int</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.to_dict"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.ParsedPacket.to_xarray"><code class="docutils literal notranslate"><span class="pre">ParsedPacket.to_xarray()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.a_mts"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.a_mts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.a_wavelength"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.a_wavelength</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.c_mts"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.c_mts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.c_wavelength"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.c_wavelength</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.daq_time"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.daq_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.salinity"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.salinity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.temperature"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.to_dict"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.structures.TSCorrectedPacket.to_xarray"><code class="docutils literal notranslate"><span class="pre">TSCorrectedPacket.to_xarray()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.packet">acspype.packet module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.packet.calibrate_packet"><code class="docutils literal notranslate"><span class="pre">calibrate_packet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.packet.parse_packet"><code class="docutils literal notranslate"><span class="pre">parse_packet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.packet.ts_correct_packet"><code class="docutils literal notranslate"><span class="pre">ts_correct_packet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.packet.unpack_packet"><code class="docutils literal notranslate"><span class="pre">unpack_packet()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.processing">acspype.processing module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.apply_discontinuity_offset"><code class="docutils literal notranslate"><span class="pre">apply_discontinuity_offset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.baseline_plus_scattering_correction"><code class="docutils literal notranslate"><span class="pre">baseline_plus_scattering_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.baseline_scattering_correction"><code class="docutils literal notranslate"><span class="pre">baseline_scattering_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.compute_discontinuity_offset"><code class="docutils literal notranslate"><span class="pre">compute_discontinuity_offset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.compute_external_temperature"><code class="docutils literal notranslate"><span class="pre">compute_external_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.compute_internal_temperature"><code class="docutils literal notranslate"><span class="pre">compute_internal_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.compute_measured"><code class="docutils literal notranslate"><span class="pre">compute_measured()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.compute_uncorrected"><code class="docutils literal notranslate"><span class="pre">compute_uncorrected()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.convert_sn_hexdec"><code class="docutils literal notranslate"><span class="pre">convert_sn_hexdec()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.convert_sn_str"><code class="docutils literal notranslate"><span class="pre">convert_sn_str()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.discontinuity_correction"><code class="docutils literal notranslate"><span class="pre">discontinuity_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.estimate_reference_wavelength"><code class="docutils literal notranslate"><span class="pre">estimate_reference_wavelength()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.find_discontinuity_index"><code class="docutils literal notranslate"><span class="pre">find_discontinuity_index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.fixed_scattering_correction"><code class="docutils literal notranslate"><span class="pre">fixed_scattering_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.interpolate_common_wavelengths"><code class="docutils literal notranslate"><span class="pre">interpolate_common_wavelengths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.proportional_plus_scattering_correction"><code class="docutils literal notranslate"><span class="pre">proportional_plus_scattering_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.proportional_scattering_correction"><code class="docutils literal notranslate"><span class="pre">proportional_scattering_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.ts_correction"><code class="docutils literal notranslate"><span class="pre">ts_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.processing.zero_shift_correction"><code class="docutils literal notranslate"><span class="pre">zero_shift_correction()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.qaqc">acspype.qaqc module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG"><code class="docutils literal notranslate"><span class="pre">FLAG</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.BAD"><code class="docutils literal notranslate"><span class="pre">FLAG.BAD</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.FAIL"><code class="docutils literal notranslate"><span class="pre">FLAG.FAIL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.HIGH_INTEREST"><code class="docutils literal notranslate"><span class="pre">FLAG.HIGH_INTEREST</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.MISSING_DATA"><code class="docutils literal notranslate"><span class="pre">FLAG.MISSING_DATA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.NOT_EVALUATED"><code class="docutils literal notranslate"><span class="pre">FLAG.NOT_EVALUATED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.OK"><code class="docutils literal notranslate"><span class="pre">FLAG.OK</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.PASS"><code class="docutils literal notranslate"><span class="pre">FLAG.PASS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.qaqc.FLAG.SUSPECT"><code class="docutils literal notranslate"><span class="pre">FLAG.SUSPECT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.a_gt_c_test"><code class="docutils literal notranslate"><span class="pre">a_gt_c_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.blanket_gross_range_test"><code class="docutils literal notranslate"><span class="pre">blanket_gross_range_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.discontinuity_offset_test"><code class="docutils literal notranslate"><span class="pre">discontinuity_offset_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.elapsed_time_test"><code class="docutils literal notranslate"><span class="pre">elapsed_time_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.gap_test"><code class="docutils literal notranslate"><span class="pre">gap_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.gross_range_test"><code class="docutils literal notranslate"><span class="pre">gross_range_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.inf_nan_test"><code class="docutils literal notranslate"><span class="pre">inf_nan_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.internal_temperature_test"><code class="docutils literal notranslate"><span class="pre">internal_temperature_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.rolling_variance_test"><code class="docutils literal notranslate"><span class="pre">rolling_variance_test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.qaqc.syntax_test"><code class="docutils literal notranslate"><span class="pre">syntax_test()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#acspype-experimental-module">acspype.experimental module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.experimental.compute_alh_676"><code class="docutils literal notranslate"><span class="pre">compute_alh_676()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.experimental.estimate_chl"><code class="docutils literal notranslate"><span class="pre">estimate_chl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.experimental.estimate_poc"><code class="docutils literal notranslate"><span class="pre">estimate_poc()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.dev">acspype.dev module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.dev.ACSDev"><code class="docutils literal notranslate"><span class="pre">ACSDev</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.dev.ACSDev.to_xarray"><code class="docutils literal notranslate"><span class="pre">ACSDev.to_xarray()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.tscor">acspype.tscor module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.tscor.ACSTS4CorReader"><code class="docutils literal notranslate"><span class="pre">ACSTS4CorReader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.tscor.ACSTS4CorReader.to_xarray"><code class="docutils literal notranslate"><span class="pre">ACSTS4CorReader.to_xarray()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.tscor.ACSTSCor"><code class="docutils literal notranslate"><span class="pre">ACSTSCor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="acspype.html#acspype.tscor.ACSTSCor.to_xarray"><code class="docutils literal notranslate"><span class="pre">ACSTSCor.to_xarray()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.utils.core">acspype.utils.core module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.utils.core.find_acs_port"><code class="docutils literal notranslate"><span class="pre">find_acs_port()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.utils.core.list_available_ports"><code class="docutils literal notranslate"><span class="pre">list_available_ports()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="acspype.html#module-acspype.utils.ooi">acspype.utils.ooi module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.utils.ooi.download_and_load_goldcopy"><code class="docutils literal notranslate"><span class="pre">download_and_load_goldcopy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.utils.ooi.get_ooi_optaa_cal"><code class="docutils literal notranslate"><span class="pre">get_ooi_optaa_cal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="acspype.html#acspype.utils.ooi.reformat_ooi_optaa"><code class="docutils literal notranslate"><span class="pre">reformat_ooi_optaa()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html">Processing and QAQC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#recommended-serial-acquisition-steps">Recommended Serial Acquisition Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#recommended-processing-steps">Recommended Processing Steps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#id2">Recommended QAQC Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#acs-device-file-variables-and-functions">ACS Device File Variables and Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#acs-tscor-variables">ACS TSCor Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#acs-output-and-processed-coordinates">ACS Output and Processed Coordinates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#acs-output-and-processed-variables">ACS Output and Processed Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#ancillary-variables">Ancillary Variables</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="other_docs.html#reference-material">Reference Material</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#manuals">Manuals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#literature">Literature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="other_docs.html#software">Software</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="readme_link.html" class="btn btn-neutral float-right" title="acspype README" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

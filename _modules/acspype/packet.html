@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.packet &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.packet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.packet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions for working with raw ACS byte packets and converting them into more readable data</span>
+<span class="sd">structures. The ACSStream class has wrapper functions around the functions in this module. Users may want to use these</span>
+<span class="sd">functions separately from the ACSStream class if reprocessing from a file that contains raw packets,</span>
+<span class="sd">such as the WETView generated .dat files or OOI CSPP .acs files.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">unpack_from</span>
+
+<span class="kn">from</span> <span class="nn">acspype.core</span> <span class="kn">import</span> <span class="n">WVL_BYTE_OFFSET</span><span class="p">,</span> <span class="n">PACKET_HEAD</span><span class="p">,</span> <span class="n">PACKET_TAIL</span><span class="p">,</span> <span class="n">PAD_BYTE</span><span class="p">,</span> <span class="n">LPR</span>
+<span class="kn">from</span> <span class="nn">acspype.structures</span> <span class="kn">import</span> <span class="n">ACSPacket</span><span class="p">,</span> <span class="n">ParsedPacket</span><span class="p">,</span> <span class="n">DeviceCalibratedPacket</span><span class="p">,</span> <span class="n">TSCorrectedPacket</span>
+<span class="kn">from</span> <span class="nn">acspype.dev</span> <span class="kn">import</span> <span class="n">ACSDev</span>
+<span class="kn">from</span> <span class="nn">acspype.tscor</span> <span class="kn">import</span> <span class="n">ACSTSCor</span>
+<span class="kn">from</span> <span class="nn">acspype.processing</span> <span class="kn">import</span> <span class="p">(</span><span class="n">convert_sn_hexdec</span><span class="p">,</span> <span class="n">convert_sn_str</span><span class="p">,</span> <span class="n">compute_internal_temperature</span><span class="p">,</span>
+                                <span class="n">compute_external_temperature</span><span class="p">,</span> <span class="n">compute_uncorrected</span><span class="p">,</span> <span class="n">compute_measured</span><span class="p">,</span>
+                                <span class="n">find_discontinuity_index</span><span class="p">,</span> <span class="n">compute_discontinuity_offset</span><span class="p">,</span> <span class="n">apply_discontinuity_offset</span><span class="p">,</span>
+                                <span class="n">ts_correction</span><span class="p">,</span> <span class="n">zero_shift_correction</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="unpack_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.packet.unpack_packet">[docs]</a>
+<span class="k">def</span> <span class="nf">unpack_packet</span><span class="p">(</span><span class="n">full_packet</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Unpack a full ACS packet into raw bytes and the checksum. This function is intended for use on a single packet.</span>
+<span class="sd">        If attempting to implement with Xarray, you will need to create a separate function or attempt to wrap this</span>
+<span class="sd">        function in an xarray.apply_ufunc.</span>
+<span class="sd">    </span>
+<span class="sd">    :param full_packet: A bytes or bytesarray object containing the full ACS packet, including the registration</span>
+<span class="sd">        bytes and the pad byte.</span>
+<span class="sd">    :return: A tuple containing the raw bytes and the checksum.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="p">[</span><span class="n">nwvls</span><span class="p">]</span> <span class="o">=</span> <span class="n">unpack_from</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">full_packet</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">WVL_BYTE_OFFSET</span><span class="p">)</span>  <span class="c1"># The number of wavelengths is byte 31.</span>
+    <span class="n">remaining_packet_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nwvls</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">full_packet_descriptor</span> <span class="o">=</span> <span class="n">PACKET_HEAD</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">remaining_packet_size</span><span class="si">}</span><span class="s2">H&quot;</span> <span class="o">+</span> <span class="n">PACKET_TAIL</span>
+    <span class="n">pad_byte_idx</span> <span class="o">=</span> <span class="n">full_packet</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="n">PAD_BYTE</span><span class="p">)</span>
+    <span class="n">checksum_bytes</span> <span class="o">=</span> <span class="n">full_packet</span><span class="p">[</span><span class="n">pad_byte_idx</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span><span class="n">pad_byte_idx</span><span class="p">]</span>
+    <span class="n">checksum</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">unpack_from</span><span class="p">(</span><span class="s1">&#39;!H&#39;</span><span class="p">,</span> <span class="n">checksum_bytes</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">unpack_from</span><span class="p">(</span><span class="n">full_packet_descriptor</span><span class="p">,</span> <span class="n">full_packet</span><span class="p">)</span>  <span class="c1"># Note: The padbyte is not returned when unpacking.</span>
+    <span class="k">return</span> <span class="n">raw</span><span class="p">,</span> <span class="n">checksum</span></div>
+
+
+
+<div class="viewcode-block" id="parse_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.packet.parse_packet">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_packet</span><span class="p">(</span><span class="n">acs_packet</span><span class="p">:</span> <span class="n">ACSPacket</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedPacket</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse an ACS packet into a ParsedPacket object. This function is intended for use on a single ACSPacket object.</span>
+<span class="sd">        If attempting to implement with Xarray, you will need to create a separate function or attempt to wrap this</span>
+<span class="sd">        function in an xr.apply_ufunc.</span>
+<span class="sd">    </span>
+<span class="sd">    :param acs_packet: An ACSPacket object containing timestamp and the full packet data. Note: Users looking to </span>
+<span class="sd">        only use this to parse the packet without caring about the daq_time can use an ACSPacket with a dummy daq_time.</span>
+<span class="sd">    :return: A ParsedPacket object containing the parsed data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">raw</span><span class="p">,</span> <span class="n">checksum</span> <span class="o">=</span> <span class="n">unpack_packet</span><span class="p">(</span><span class="n">acs_packet</span><span class="o">.</span><span class="n">full_packet</span><span class="p">)</span>
+    <span class="n">nwvls</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">13</span><span class="p">]</span>
+    <span class="n">parsed_packet</span> <span class="o">=</span> <span class="n">ParsedPacket</span><span class="p">(</span>
+        <span class="n">daq_time</span><span class="o">=</span><span class="n">acs_packet</span><span class="o">.</span><span class="n">daq_time</span><span class="p">,</span>
+        <span class="n">record_length</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">packet_type</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="c1"># reserved_1 = raw[LPR + 2],  # reserved_1 is not used for anything at this time.</span>
+        <span class="n">sn_int</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">3</span><span class="p">],</span>
+        <span class="n">a_reference_dark</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">4</span><span class="p">],</span>
+        <span class="c1"># raw_pressure = raw[LPR + 5], # raw_pressure is deprecated and no longer used.</span>
+        <span class="n">a_signal_dark</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">6</span><span class="p">],</span>
+        <span class="n">raw_external_temperature</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">7</span><span class="p">],</span>
+        <span class="n">raw_internal_temperature</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">8</span><span class="p">],</span>
+        <span class="n">c_reference_dark</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">9</span><span class="p">],</span>
+        <span class="n">c_signal_dark</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">10</span><span class="p">],</span>
+        <span class="n">elapsed_time</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">11</span><span class="p">],</span>
+        <span class="c1"># reserved_2= raw[LPR + 12], # reserved_2 is not used for anything at this time.</span>
+        <span class="n">number_of_wavelengths</span><span class="o">=</span><span class="n">nwvls</span><span class="p">,</span>
+        <span class="n">c_reference</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">14</span><span class="p">:</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">14</span> <span class="o">+</span> <span class="p">(</span><span class="n">nwvls</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span><span class="mi">4</span><span class="p">],</span>
+        <span class="n">a_reference</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">15</span><span class="p">:</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">15</span> <span class="o">+</span> <span class="p">(</span><span class="n">nwvls</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span><span class="mi">4</span><span class="p">],</span>
+        <span class="n">c_signal</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">16</span><span class="p">:</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">16</span> <span class="o">+</span> <span class="p">(</span><span class="n">nwvls</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span><span class="mi">4</span><span class="p">],</span>
+        <span class="n">a_signal</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">17</span><span class="p">:</span><span class="n">LPR</span> <span class="o">+</span> <span class="mi">17</span> <span class="o">+</span> <span class="p">(</span><span class="n">nwvls</span> <span class="o">*</span> <span class="mi">4</span><span class="p">):</span><span class="mi">4</span><span class="p">],</span>
+        <span class="n">checksum</span><span class="o">=</span><span class="n">checksum</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">parsed_packet</span></div>
+
+
+
+<div class="viewcode-block" id="calibrate_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.packet.calibrate_packet">[docs]</a>
+<span class="k">def</span> <span class="nf">calibrate_packet</span><span class="p">(</span><span class="n">parsed_packet</span><span class="p">:</span> <span class="n">ParsedPacket</span><span class="p">,</span> <span class="n">dev</span><span class="p">:</span> <span class="n">ACSDev</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceCalibratedPacket</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calibrate a parsed packet using the device calibration parameters. This function is intended for use on a single</span>
+<span class="sd">        ParsedPacket object. If attempting to implement with Xarray, you will need to create a separate function or</span>
+<span class="sd">        attempt to wrap this function in an xarray.apply_ufunc.</span>
+<span class="sd">        </span>
+<span class="sd">    :param parsed_packet: A ParsedPacket object containing the parsed data. </span>
+<span class="sd">    :param dev: An ACSDev-like object containing the device calibration parameters.</span>
+<span class="sd">    :return: A DeviceCalibratedPacket object containing data corrected/calibrated to the values in the ACSDev object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">internal_temperature</span> <span class="o">=</span> <span class="n">compute_internal_temperature</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">raw_internal_temperature</span><span class="p">)</span>
+    <span class="n">external_temperature</span> <span class="o">=</span> <span class="n">compute_external_temperature</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">raw_external_temperature</span><span class="p">)</span>
+
+    <span class="n">a_uncorrected</span> <span class="o">=</span> <span class="n">compute_uncorrected</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">a_signal</span><span class="p">,</span> <span class="n">parsed_packet</span><span class="o">.</span><span class="n">a_reference</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">path_length</span><span class="p">)</span>
+    <span class="n">c_uncorrected</span> <span class="o">=</span> <span class="n">compute_uncorrected</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">c_signal</span><span class="p">,</span> <span class="n">parsed_packet</span><span class="o">.</span><span class="n">c_reference</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">path_length</span><span class="p">)</span>
+
+    <span class="n">disc_idx</span> <span class="o">=</span> <span class="n">find_discontinuity_index</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)</span>
+    <span class="n">a_m_discontinuity</span> <span class="o">=</span> <span class="n">compute_measured</span><span class="p">(</span><span class="n">a_uncorrected</span><span class="p">,</span> <span class="n">internal_temperature</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">a_offset</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">func_a_delta_t</span><span class="p">)</span>
+    <span class="n">c_m_discontinuity</span> <span class="o">=</span> <span class="n">compute_measured</span><span class="p">(</span><span class="n">c_uncorrected</span><span class="p">,</span> <span class="n">internal_temperature</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">c_offset</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">func_c_delta_t</span><span class="p">)</span>
+
+    <span class="n">a_disc_offset</span> <span class="o">=</span> <span class="n">compute_discontinuity_offset</span><span class="p">(</span><span class="n">a_m_discontinuity</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">)</span>
+    <span class="n">c_disc_offset</span> <span class="o">=</span> <span class="n">compute_discontinuity_offset</span><span class="p">(</span><span class="n">c_m_discontinuity</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">)</span>
+
+    <span class="n">a_m</span> <span class="o">=</span> <span class="n">apply_discontinuity_offset</span><span class="p">(</span><span class="n">a_m_discontinuity</span><span class="p">,</span> <span class="n">a_disc_offset</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">)</span>
+    <span class="n">c_m</span> <span class="o">=</span> <span class="n">apply_discontinuity_offset</span><span class="p">(</span><span class="n">c_m_discontinuity</span><span class="p">,</span> <span class="n">c_disc_offset</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">)</span>
+
+    <span class="n">dev_cal_packet</span> <span class="o">=</span> <span class="n">DeviceCalibratedPacket</span><span class="p">(</span>
+        <span class="n">daq_time</span><span class="o">=</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">daq_time</span><span class="p">,</span>
+        <span class="n">a_wavelength</span><span class="o">=</span><span class="n">dev</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">,</span>
+        <span class="n">c_wavelength</span><span class="o">=</span><span class="n">dev</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">,</span>
+        <span class="n">sn_hexdec</span><span class="o">=</span><span class="n">convert_sn_hexdec</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">sn_int</span><span class="p">),</span>
+        <span class="n">serial_number</span><span class="o">=</span><span class="n">convert_sn_str</span><span class="p">(</span><span class="n">parsed_packet</span><span class="o">.</span><span class="n">sn_int</span><span class="p">),</span>
+        <span class="n">internal_temperature</span><span class="o">=</span><span class="n">internal_temperature</span><span class="p">,</span>
+        <span class="n">external_temperature</span><span class="o">=</span><span class="n">external_temperature</span><span class="p">,</span>
+        <span class="n">a_uncorrected</span><span class="o">=</span><span class="n">a_uncorrected</span><span class="p">,</span>
+        <span class="n">c_uncorrected</span><span class="o">=</span><span class="n">c_uncorrected</span><span class="p">,</span>
+        <span class="n">discontinuity_index</span><span class="o">=</span><span class="n">disc_idx</span><span class="p">,</span>
+        <span class="n">a_discontinuity_offset</span><span class="o">=</span><span class="n">a_disc_offset</span><span class="p">,</span>
+        <span class="n">c_discontinuity_offset</span><span class="o">=</span><span class="n">c_disc_offset</span><span class="p">,</span>
+        <span class="n">a_m_discontinuity</span><span class="o">=</span><span class="n">a_m_discontinuity</span><span class="p">,</span>
+        <span class="n">c_m_discontinuity</span><span class="o">=</span><span class="n">c_m_discontinuity</span><span class="p">,</span>
+        <span class="n">a_m</span><span class="o">=</span><span class="n">a_m</span><span class="p">,</span>
+        <span class="n">c_m</span><span class="o">=</span><span class="n">c_m</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">dev_cal_packet</span></div>
+
+
+
+<div class="viewcode-block" id="ts_correct_packet">
+<a class="viewcode-back" href="../../acspype.html#acspype.packet.ts_correct_packet">[docs]</a>
+<span class="k">def</span> <span class="nf">ts_correct_packet</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="p">:</span> <span class="n">DeviceCalibratedPacket</span><span class="p">,</span>
+                      <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">salinity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                      <span class="n">dev</span><span class="p">:</span> <span class="n">ACSDev</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TSCorrectedPacket</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply TS-correction to a device calibrated packet.</span>
+
+<span class="sd">    :param device_calibrated_packet: A DeviceCalibratedPacket object containing the device calibrated data.</span>
+<span class="sd">    :param temperature: The temperature or conservative temperature of the water sample in degrees Celsius.</span>
+<span class="sd">    :param salinity: The practical or absolute salinity of the water sample.</span>
+<span class="sd">    :param dev: A ACSDev-like object containing the device calibration parameters.</span>
+<span class="sd">    :return: A TSCorrectedPacket object containing data that has been corrected</span>
+<span class="sd">        for dependence on temperature and salinity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Import the TSCor Coefficients. Absorption and attenuation use different coefficients.</span>
+    <span class="n">tscor</span> <span class="o">=</span> <span class="n">ACSTSCor</span><span class="p">()</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()</span>
+    <span class="n">psi_s_a</span> <span class="o">=</span> <span class="n">tscor</span><span class="o">.</span><span class="n">psi_s_a</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">wavelength</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+    <span class="n">a_psi_t</span> <span class="o">=</span> <span class="n">tscor</span><span class="o">.</span><span class="n">psi_t</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">wavelength</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+
+    <span class="n">psi_s_c</span> <span class="o">=</span> <span class="n">tscor</span><span class="o">.</span><span class="n">psi_s_c</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">wavelength</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+    <span class="n">c_psi_t</span> <span class="o">=</span> <span class="n">tscor</span><span class="o">.</span><span class="n">psi_t</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">wavelength</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span>
+
+    <span class="n">a_mts</span> <span class="o">=</span> <span class="n">ts_correction</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">a_m</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">salinity</span><span class="p">,</span> <span class="n">a_psi_t</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">psi_s_a</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">tcal</span><span class="p">)</span>
+    <span class="n">c_mts</span> <span class="o">=</span> <span class="n">ts_correction</span><span class="p">(</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">c_m</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">salinity</span><span class="p">,</span> <span class="n">c_psi_t</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">psi_s_c</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">tcal</span><span class="p">)</span>
+
+    <span class="n">a_mts</span> <span class="o">=</span> <span class="n">zero_shift_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">)</span>  <span class="c1"># Zero shift correction is applied to the a_mts values.</span>
+    <span class="n">c_mts</span> <span class="o">=</span> <span class="n">zero_shift_correction</span><span class="p">(</span><span class="n">c_mts</span><span class="p">)</span>
+
+    <span class="n">ts_cor_packet</span> <span class="o">=</span> <span class="n">TSCorrectedPacket</span><span class="p">(</span>
+        <span class="n">daq_time</span><span class="o">=</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">daq_time</span><span class="p">,</span>
+        <span class="n">a_wavelength</span><span class="o">=</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">,</span>
+        <span class="n">c_wavelength</span><span class="o">=</span><span class="n">device_calibrated_packet</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+        <span class="n">salinity</span><span class="o">=</span><span class="n">salinity</span><span class="p">,</span>
+        <span class="n">a_mts</span><span class="o">=</span><span class="n">a_mts</span><span class="p">,</span>
+        <span class="n">c_mts</span><span class="o">=</span><span class="n">c_mts</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">ts_cor_packet</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

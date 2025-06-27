@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.utils.ooi &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.utils.ooi</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.utils.ooi</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains helper functions for accessing and working with OOI ACS data.</span>
+<span class="sd">The OOI has named all their ACS sensors OPTAA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">make_interp_spline</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+
+<div class="viewcode-block" id="reformat_ooi_optaa">
+<a class="viewcode-back" href="../../../acspype.html#acspype.utils.ooi.reformat_ooi_optaa">[docs]</a>
+<span class="k">def</span> <span class="nf">reformat_ooi_optaa</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reformat an OOI OPTAA dataset to make it more compatible with acspype.</span>
+
+<span class="sd">    :param ds: An OOI OPTAA dataset.</span>
+<span class="sd">    :return: A reformatted and renamed OOI OPTAA dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Rename Wavelength dimensions</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s1">&#39;wavelength_a&#39;</span><span class="p">:</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">,</span> <span class="s1">&#39;wavelength_c&#39;</span><span class="p">:</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">})</span>
+    <span class="n">a_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">)</span>
+    <span class="n">c_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)</span>
+    <span class="n">nwvls</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">num_wavelengths</span><span class="p">))</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s1">&#39;a_wavelength&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">,</span> <span class="s1">&#39;num_wavelengths&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Pull out lat/lon.</span>
+    <span class="c1"># No OOI OPTAA dataset is currently mobile, so assign a static latitude and longitude to the entire dataset.</span>
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">lat</span><span class="p">)</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">lon</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s1">&#39;lat&#39;</span><span class="p">,</span> <span class="s1">&#39;lon&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Pull out deployment variable to assign as a dimension later.</span>
+    <span class="n">dep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">deployment</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s1">&#39;deployment&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Reformat to use time instead of obs.</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">swap_dims</span><span class="p">({</span><span class="s1">&#39;obs&#39;</span><span class="p">:</span> <span class="s1">&#39;time&#39;</span><span class="p">})</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s1">&#39;obs&#39;</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Create a new dataset with the appropriate dimensions.</span>
+    <span class="n">nds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+    <span class="n">nds</span> <span class="o">=</span> <span class="n">nds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">({</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">:</span> <span class="n">a_wvl</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">:</span> <span class="n">c_wvl</span><span class="p">})</span>
+    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;a_signal_counts&#39;</span><span class="p">,</span> <span class="s1">&#39;a_reference_counts&#39;</span><span class="p">,</span> <span class="s1">&#39;optical_absorption&#39;</span><span class="p">]:</span>
+            <span class="n">nds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;c_signal_counts&#39;</span><span class="p">,</span> <span class="s1">&#39;c_reference_counts&#39;</span><span class="p">,</span> <span class="s1">&#39;beam_attenuation&#39;</span><span class="p">]:</span>
+            <span class="n">nds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s1">&#39;time&#39;</span><span class="p">],</span> <span class="n">ds</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># Rename variables to match _acspype.</span>
+    <span class="n">mapper</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;external_temp_raw&#39;</span><span class="p">:</span> <span class="s1">&#39;raw_external_temperature&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;c_signal_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;c_signal&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;a_signal_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;a_signal&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;int_ctd_pressure&#39;</span><span class="p">:</span> <span class="s1">&#39;sea_water_pressure&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;a_reference_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;a_reference&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;driver_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;driver_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;uuid&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;provenance&#39;</span><span class="p">:</span> <span class="s1">&#39;provenance_uuid&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;internal_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;internal_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;beam_attenuation&#39;</span><span class="p">:</span> <span class="s1">&#39;beam_attenuation&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;profiler_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;profiler_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;internal_temp_raw&#39;</span><span class="p">:</span> <span class="s1">&#39;raw_internal_temperature&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;ingestion_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;ingestion_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;c_reference_dark_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;c_reference_dark&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;port_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;port_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;optical_absorption&#39;</span><span class="p">:</span> <span class="s1">&#39;optical_absorption&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;sea_water_practical_salinity&#39;</span><span class="p">:</span> <span class="s1">&#39;sea_water_practical_salinity&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;on_seconds&#39;</span><span class="p">:</span> <span class="s1">&#39;elapsed_time&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;elapsed_run_time&#39;</span><span class="p">:</span> <span class="s1">&#39;elapsed_time&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;c_signal_dark_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;c_signal_dark&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;pressure_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;raw_pressure&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;preferred_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;preferred_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;a_signal_dark_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;a_signal_dark&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;a_reference_dark_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;a_reference_dark&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;c_reference_counts&#39;</span><span class="p">:</span> <span class="s1">&#39;c_reference&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;suspect_timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;suspect_timestamp&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;sea_water_temperature&#39;</span><span class="p">:</span> <span class="s1">&#39;sea_water_temperature&#39;</span><span class="p">}</span>
+
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">mapper</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">nds</span> <span class="o">=</span> <span class="n">nds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+            <span class="n">nds</span><span class="p">[</span><span class="n">value</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+    <span class="n">qvars</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span> <span class="k">if</span> <span class="s1">&#39;qartod&#39;</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">qvar</span> <span class="ow">in</span> <span class="n">qvars</span><span class="p">:</span>
+        <span class="n">nds</span><span class="p">[</span><span class="n">qvar</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">qvar</span><span class="p">]</span>
+
+    <span class="c1"># Update elapsed_time if it arrives with units of seconds.</span>
+    <span class="k">if</span> <span class="n">nds</span><span class="o">.</span><span class="n">elapsed_time</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;s&#39;</span><span class="p">:</span>
+        <span class="n">nds</span><span class="p">[</span><span class="s1">&#39;elapsed_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nds</span><span class="o">.</span><span class="n">elapsed_time</span> <span class="o">*</span> <span class="mi">1000</span>
+        <span class="n">nds</span><span class="p">[</span><span class="s1">&#39;elapsed_time&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ms&#39;</span>
+
+    <span class="c1"># Reassign lat and lon dimensions.</span>
+    <span class="n">nds</span> <span class="o">=</span> <span class="n">nds</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">({</span><span class="s1">&#39;latitude&#39;</span><span class="p">:</span> <span class="n">lat</span><span class="p">,</span>
+                           <span class="s1">&#39;longitude&#39;</span><span class="p">:</span> <span class="n">lon</span><span class="p">,</span>
+                           <span class="s1">&#39;deployment&#39;</span><span class="p">:</span> <span class="n">dep</span><span class="p">})</span>
+
+    <span class="c1"># Reassign attributes</span>
+    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;[]&#39;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span>
+    <span class="n">nds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;number_of_output_wavelengths&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nwvls</span>
+
+    <span class="c1"># Drop confusing variables or variables we will reprocess to.</span>
+    <span class="n">vars_to_drop</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;driver_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;provenance_uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;internal_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;ingestion_timestamp&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;profiler_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;port_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;preferred_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;suspect_timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;raw_pressure&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;optical_absorption&#39;</span><span class="p">,</span> <span class="s1">&#39;beam_attenuation&#39;</span><span class="p">]</span>
+    <span class="n">nds</span> <span class="o">=</span> <span class="n">nds</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">vars_to_drop</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Reorder variables alphabetically for convenience.</span>
+    <span class="n">nds</span> <span class="o">=</span> <span class="n">nds</span><span class="p">[</span><span class="nb">sorted</span><span class="p">(</span><span class="n">nds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)]</span>
+
+    <span class="k">return</span> <span class="n">nds</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_build_acpype_dev_obj</span><span class="p">(</span><span class="n">response_data</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build an ACSDev-like object for processing OOI OPTAA data with _acspype.</span>
+
+<span class="sd">    :param response_data: The response from an UID request to the OOI API.</span>
+<span class="sd">    :param start: The start time of dataset, used to find the most recent calibration.</span>
+<span class="sd">    :return: An ACSDev-like class object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cals</span> <span class="o">=</span> <span class="n">response_data</span><span class="p">[</span><span class="s1">&#39;calibration&#39;</span><span class="p">]</span>
+    <span class="n">cal_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">cal</span> <span class="ow">in</span> <span class="n">cals</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_acwo&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;a_offset&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_ccwo&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;c_offset&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_tcarray&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;c_delta_t&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_taarray&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;a_delta_t&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_tcal&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;tcal&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_awlngth&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;a_wavelength&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_cwlngth&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;c_wavelength&#39;</span>
+        <span class="k">elif</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;CC_tbins&#39;</span><span class="p">:</span>
+            <span class="n">cname</span> <span class="o">=</span> <span class="s1">&#39;tbins&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown calibration value name: </span><span class="si">{</span><span class="n">cal</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">subcals</span> <span class="o">=</span> <span class="n">cal</span><span class="p">[</span><span class="s1">&#39;calData&#39;</span><span class="p">]</span>
+        <span class="n">matching_cals</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">subcal</span> <span class="ow">in</span> <span class="n">subcals</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">subcal</span><span class="p">[</span><span class="s1">&#39;dataSource&#39;</span><span class="p">]</span>
+            <span class="n">dt_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;_(\d</span><span class="si">{8}</span><span class="s1">)_&#39;</span><span class="p">,</span> <span class="n">source</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dt_str</span><span class="p">,</span> <span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dt</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+                <span class="n">matching_cals</span><span class="p">[</span><span class="n">dt</span><span class="p">]</span> <span class="o">=</span> <span class="n">subcal</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+
+        <span class="n">cal_dates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">matching_cals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">diffs</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span> <span class="o">-</span> <span class="n">cd</span> <span class="k">for</span> <span class="n">cd</span> <span class="ow">in</span> <span class="n">cal_dates</span><span class="p">]</span>
+        <span class="n">matching_dt</span> <span class="o">=</span> <span class="n">cal_dates</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">diffs</span><span class="p">)]</span>
+        <span class="n">cal_data</span><span class="p">[</span><span class="n">cname</span><span class="p">]</span> <span class="o">=</span> <span class="n">matching_cals</span><span class="p">[</span><span class="n">matching_dt</span><span class="p">]</span>
+
+    <span class="k">class</span> <span class="nc">Dev</span><span class="p">:</span>
+        <span class="c1"># Simulate an ACSDev object.</span>
+
+        <span class="n">a_wavelength</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;a_wavelength&#39;</span><span class="p">]</span>
+        <span class="n">c_wavelength</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;c_wavelength&#39;</span><span class="p">]</span>
+        <span class="n">tbin</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;tbins&#39;</span><span class="p">]</span>
+        <span class="n">a_offset</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;a_offset&#39;</span><span class="p">]</span>
+        <span class="n">c_offset</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;c_offset&#39;</span><span class="p">]</span>
+        <span class="n">a_delta_t</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;a_delta_t&#39;</span><span class="p">]</span>
+        <span class="n">c_delta_t</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;c_delta_t&#39;</span><span class="p">]</span>
+        <span class="n">tcal</span> <span class="o">=</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;tcal&#39;</span><span class="p">]</span>
+        <span class="n">path_length</span> <span class="o">=</span> <span class="mf">0.25</span>
+
+        <span class="c1"># func_a_delta_t = interpolate.interp1d(cal_data[&#39;tbins&#39;], cal_data[&#39;a_delta_t&#39;], axis=1)</span>
+        <span class="c1"># func_c_delta_t = interpolate.interp1d(cal_data[&#39;tbins&#39;], cal_data[&#39;c_delta_t&#39;], axis=1)</span>
+        <span class="n">func_a_delta_t</span> <span class="o">=</span> <span class="n">make_interp_spline</span><span class="p">(</span><span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;tbins&#39;</span><span class="p">],</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;a_delta_t&#39;</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">func_c_delta_t</span> <span class="o">=</span> <span class="n">make_interp_spline</span><span class="p">(</span><span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;tbins&#39;</span><span class="p">],</span> <span class="n">cal_data</span><span class="p">[</span><span class="s1">&#39;c_delta_t&#39;</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dev</span>
+
+
+<div class="viewcode-block" id="get_ooi_optaa_cal">
+<a class="viewcode-back" href="../../../acspype.html#acspype.utils.ooi.get_ooi_optaa_cal">[docs]</a>
+<span class="k">def</span> <span class="nf">get_ooi_optaa_cal</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find an OOI OPTAA calibration for a given dataset.</span>
+
+<span class="sd">    :param ds: The OOI OPTAA dataset. It must contain data from a single deployment.</span>
+<span class="sd">        It is recommended to not change the format of the file until after running this function.</span>
+<span class="sd">    :return: A ACSDev-like object containing the calibration data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">asset_url</span> <span class="o">=</span> <span class="s1">&#39;https://ooinet.oceanobservatories.org/api/m2m/12587/asset&#39;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;AssetUniqueID&#39;</span><span class="p">]}</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">asset_url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="n">requests</span><span class="o">.</span><span class="n">codes</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;aintenance&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>  <span class="c1"># Check for (m)aintenance message</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s1">&#39;OOI API is currently down for maintenance.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="n">dev</span> <span class="o">=</span> <span class="n">_build_acpype_dev_obj</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dev</span></div>
+
+
+
+<div class="viewcode-block" id="download_and_load_goldcopy">
+<a class="viewcode-back" href="../../../acspype.html#acspype.utils.ooi.download_and_load_goldcopy">[docs]</a>
+<span class="k">def</span> <span class="nf">download_and_load_goldcopy</span><span class="p">(</span><span class="n">thredds_fileserver_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                               <span class="n">save_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;ooi_data/&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download and load a dataset from the OOI THREDDS GoldCopy catalog.</span>
+<span class="sd">    Sometimes data accessed through the OpenDAP URL is incomplete, so downloading is recommended.</span>
+
+<span class="sd">    :param thredds_fileserver_url: A THREDDS GoldCopy URL. Must contain fileServer, not dodsC.</span>
+<span class="sd">    :param save_dir: The directory to save the dataset to.</span>
+<span class="sd">    :return: The xarray dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">thredds_fileserver_url</span><span class="p">)</span>
+    <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ds</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">thredds_fileserver_url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">req</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fileobj</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copyfileobj</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">fileobj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

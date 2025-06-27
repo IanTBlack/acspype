@@ -1,0 +1,781 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.processing &mdash; acspype 0.3.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d5a15cff"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.processing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.processing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions that are used to process data from the ACS in real-time or as a batch process.</span>
+
+<span class="sd">Most functions are intended to be used with scalar values/1D arrays (e.g. data produced in real-time) or</span>
+<span class="sd">xarray DataArrays (e.g. mass processing of an ACS deployment), or both.</span>
+<span class="sd">Scalar/1D inputs are intended to be used in the processing of a single packet or spectrum from the ACS.</span>
+<span class="sd">xr.DataArray implementation is intended to be used in the processing of multiple spectra already in an xarray.Dataset.</span>
+<span class="sd">For computations that are not immediately builtin to xarray,the xarray.apply_ufunc function is used to</span>
+<span class="sd">apply the function that is denoted with a prepended underscore.</span>
+
+<span class="sd">It is strongly recommended that your xarray.Dataset contain the coordinates/dimensions of</span>
+<span class="sd">    time, a_wavelength, c_wavelength</span>
+
+<span class="sd">For a list of recommended coordinate/variable names for ACS data products, please see</span>
+<span class="sd">https://github.com/IanTBlack/acspype/blob/main/info/NAMING_CONVENTIONS.md</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy.typing</span> <span class="kn">import</span> <span class="n">NDArray</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">CubicSpline</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_sn_hexdec</span><span class="p">(</span><span class="n">sn_int</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts an integer representing an ACS serial number to the hexadecimal representation.</span>
+<span class="sd">    Application to an array of serial numbers requires this function to be vectorized. See convert_sn_hexdec.</span>
+
+<span class="sd">    :param sn_int: An integer representing the ACS serial number.</span>
+<span class="sd">    :return: The hexadecimal representation of the serial number, not really as readable as the integer representation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sn_hexdec</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="n">sn_int</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sn_hexdec</span>
+
+
+<div class="viewcode-block" id="convert_sn_hexdec">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.convert_sn_hexdec">[docs]</a>
+<span class="k">def</span> <span class="nf">convert_sn_hexdec</span><span class="p">(</span><span class="n">sn_int</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts an integer representing an ACS serial number to the hexadecimal representation.</span>
+<span class="sd">    The function vectorizes _convert_sn_hexdec for xr.DataArray inputs.</span>
+
+<span class="sd">    :param sn_int: An integer or xr.DataArray of integers representing the ACS serial number.</span>
+<span class="sd">    :return: The hexadecimal representation of the serial number, not really as readable as the integer representation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sn_int</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">sn_hexdec</span> <span class="o">=</span> <span class="n">_convert_sn_hexdec</span><span class="p">(</span><span class="n">sn_int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sn_hexdec</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span><span class="n">_convert_sn_hexdec</span><span class="p">,</span> <span class="n">sn_int</span><span class="p">,</span>
+                                   <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[]],</span>
+                                   <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[]],</span>
+                                   <span class="n">vectorize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes if output is a xr.DataArray.</span>
+        <span class="n">sn_hexdec</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sn_int</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">sn_hexdec</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_convert_sn_str</span><span class="p">(</span><span class="n">sn_int</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts an integer representing an ACS serial number to a string representation.</span>
+<span class="sd">    Application to an array of serial numbers requires this function to be vectorized. See convert_sn_str.</span>
+
+<span class="sd">    :param sn_int: An integer representing the ACS serial number.</span>
+<span class="sd">    :return: The string representation of the serial number, zero-padded for consistent string length into the future.</span>
+<span class="sd">    :note: The string serial number should match that of the serial number sticker on the ACS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sn_hexdec</span> <span class="o">=</span> <span class="n">convert_sn_hexdec</span><span class="p">(</span><span class="n">sn_int</span><span class="p">)</span>
+    <span class="n">sn_str</span> <span class="o">=</span> <span class="s1">&#39;ACS-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">sn_hexdec</span><span class="p">[</span><span class="o">-</span><span class="mi">6</span><span class="p">:],</span> <span class="mi">16</span><span class="p">))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>  <span class="c1"># sn string becomes ACS-XXXXX. Zero padded to 5 digits.</span>
+    <span class="k">return</span> <span class="n">sn_str</span>
+
+
+<div class="viewcode-block" id="convert_sn_str">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.convert_sn_str">[docs]</a>
+<span class="k">def</span> <span class="nf">convert_sn_str</span><span class="p">(</span><span class="n">sn_int</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts an integer representing an ACS serial number to a string representation.</span>
+<span class="sd">    This function vectorizes _convert_sn_str for xr.DataArray inputs.</span>
+
+<span class="sd">    :param sn_int: An integer or xr.DataArray of integers representing the ACS serial number.</span>
+<span class="sd">    :return: The string representation of the serial number.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sn_int</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_convert_sn_str</span><span class="p">(</span><span class="n">sn_int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sn_str</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span><span class="n">_convert_sn_str</span><span class="p">,</span> <span class="n">sn_int</span><span class="p">,</span>
+                                <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[]],</span>
+                                <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[]],</span>
+                                <span class="n">vectorize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+        <span class="n">sn_str</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sn_int</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="n">sn_str</span></div>
+
+
+
+<div class="viewcode-block" id="compute_internal_temperature">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.compute_internal_temperature">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_internal_temperature</span><span class="p">(</span><span class="n">counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the internal temperature of the ACS from the counts of the internal temperature sensor.</span>
+
+<span class="sd">    :param counts: Values of the internal temperature sensor, in counts.</span>
+<span class="sd">    :return: A float value if the input was a scalar counts value or an xr.DataArray of the internal temperature</span>
+<span class="sd">        if input as an xr.DataArray. Units of return are degrees Celsius.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">0.00093135</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mf">0.000221631</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">0.000000125741</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mf">273.15</span>
+    <span class="n">volts</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">counts</span> <span class="o">/</span> <span class="mi">65535</span>
+    <span class="n">resistance</span> <span class="o">=</span> <span class="mi">10000</span> <span class="o">*</span> <span class="n">volts</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.516</span> <span class="o">-</span> <span class="n">volts</span><span class="p">)</span>
+    <span class="n">internal_temperature</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">resistance</span><span class="p">)</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">resistance</span><span class="p">)</span> <span class="o">**</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="n">d</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">internal_temperature</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">internal_temperature</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">internal_temperature</span></div>
+
+
+
+<div class="viewcode-block" id="compute_external_temperature">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.compute_external_temperature">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_external_temperature</span><span class="p">(</span><span class="n">counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the external temperature of the ACS from the counts of the external temperature sensor.</span>
+<span class="sd">    Not used in processing if the sensor is not placed in-situ or if there is a better _source that is indicative</span>
+<span class="sd">    of the temperature of the water sampled by the ACS.</span>
+
+<span class="sd">    :param counts: The counts of the external temperature sensor.</span>
+<span class="sd">    :return: The external temperature in degrees Celsius.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="o">-</span><span class="mf">7.1023317e-13</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mf">7.09341920e-08</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.87065673e-03</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="mf">95.8241397</span>
+    <span class="n">external_temperature</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">counts</span> <span class="o">**</span> <span class="mi">3</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">counts</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">counts</span> <span class="o">+</span> <span class="n">d</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">external_temperature</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">external_temperature</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">external_temperature</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">external_temperature</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">external_temperature</span></div>
+
+
+
+<div class="viewcode-block" id="compute_uncorrected">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.compute_uncorrected">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_uncorrected</span><span class="p">(</span><span class="n">signal_counts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                        <span class="n">reference_counts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                        <span class="n">path_length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the uncorrected coefficient from the signal and reference counts.</span>
+
+<span class="sd">    :param signal_counts: The absorption or attenuation channel signal counts.</span>
+<span class="sd">    :param reference_counts: The absorption or attenuation channel reference counts.</span>
+<span class="sd">    :param path_length: The path length of the ACS in meters. Default is 0.25m, but it is recommended to use the path</span>
+<span class="sd">        length in the device file.</span>
+<span class="sd">    :return: Uncorrected absorption or attenuation coefficient in m^-1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signal_counts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">signal_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">signal_counts</span><span class="p">)</span>
+        <span class="n">reference_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reference_counts</span><span class="p">)</span>
+    <span class="n">uncorr</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">path_length</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">signal_counts</span> <span class="o">/</span> <span class="n">reference_counts</span><span class="p">)</span>
+
+    <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uncorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">uncorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">signal_counts</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">reference_counts</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">uncorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;path_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">path_length</span>
+    <span class="k">return</span> <span class="n">uncorr</span></div>
+
+
+
+<div class="viewcode-block" id="compute_measured">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.compute_measured">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_measured</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                     <span class="n">internal_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                     <span class="n">offset</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                     <span class="n">func_delta_t</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the measured absorption or attenuation coefficient from the uncorrected coefficient</span>
+<span class="sd">    and the internal temperature.</span>
+
+<span class="sd">    :param uncorrected: The uncorrected absorption or attenuation coefficient.</span>
+<span class="sd">        Typically computed via compute_uncorrected().</span>
+<span class="sd">    :param internal_temperature: The internal temperature of the ACS in degrees Celsius.</span>
+<span class="sd">        Typically computed via compute_internal_temperature().</span>
+<span class="sd">    :param offset: The coefficient offset from the device file.</span>
+<span class="sd">    :param func_delta_t: The interpolation function for correcting for internal temperature variation.</span>
+<span class="sd">        This function is built by default when using an ACSDev object.</span>
+<span class="sd">    :return: Measured absorption or attenuation coefficient in m^-1, corrected for internal temperature variation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uncorrected</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">measured</span> <span class="o">=</span> <span class="p">(</span><span class="n">offset</span> <span class="o">-</span> <span class="n">uncorrected</span><span class="p">)</span> <span class="o">-</span> <span class="n">func_delta_t</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Something weird happens when using BSpline, so the transposition is necessary to get the right shape.</span>
+        <span class="n">measured</span> <span class="o">=</span> <span class="p">(</span><span class="n">offset</span> <span class="o">-</span> <span class="n">uncorrected</span><span class="p">)</span> <span class="o">-</span> <span class="n">func_delta_t</span><span class="p">(</span><span class="n">internal_temperature</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+
+        <span class="n">measured</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">uncorrected</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">internal_temperature</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">measured</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;func_delta_t&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;scipy.interpolate.make_interp_spline&#39;</span>
+        <span class="n">measured</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;func_delta_t_k_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+    <span class="k">return</span> <span class="n">measured</span></div>
+
+
+
+<div class="viewcode-block" id="find_discontinuity_index">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.find_discontinuity_index">[docs]</a>
+<span class="k">def</span> <span class="nf">find_discontinuity_index</span><span class="p">(</span><span class="n">a_wavelength</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                             <span class="n">c_wavelength</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                             <span class="n">min_wvl</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">535.0</span><span class="p">,</span> <span class="n">max_wvl</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">600.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the wavelength index of the discontinuity in the absorption and attenuation spectra. The discontinuity is</span>
+<span class="sd">    in the range of 535-600nm.</span>
+
+<span class="sd">    :param a_wavelength: The absorption wavelengths of the ACS.</span>
+<span class="sd">    :param c_wavelength: The attenuation wavelengths of the ACS.</span>
+<span class="sd">    :param min_wvl: Default is 535 nm. Can be adjusted if the discontinuity is not in the expected range.</span>
+<span class="sd">    :param max_wvl: Default is 600 nm. Can be adjusted if the discontinuity is not in the expected range.</span>
+<span class="sd">    :return: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">a_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">a_wavelength</span> <span class="o">&lt;</span> <span class="n">min_wvl</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">a_wavelength</span> <span class="o">&gt;</span> <span class="n">max_wvl</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">a_wavelength</span><span class="p">)</span>
+    <span class="n">c_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">c_wavelength</span> <span class="o">&lt;</span> <span class="n">min_wvl</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">c_wavelength</span> <span class="o">&gt;</span> <span class="n">max_wvl</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">c_wavelength</span><span class="p">)</span>
+    <span class="n">discontinuity_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">a_wvl</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">c_wvl</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">discontinuity_index</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_compute_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                                  <span class="n">wavelength</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                                  <span class="n">disc_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the discontinuity offset for a measured coefficient.</span>
+<span class="sd">    compute_discontinuity_offset provides vectorization for this function.</span>
+
+<span class="sd">    :param measured: Absorption or attenuation coefficient.</span>
+<span class="sd">    :param wavelength: The wavelengths of the absorption or attenuation spectra.</span>
+<span class="sd">    :param disc_idx: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    :return: The offset of the discontinuity in the absorption and attenuation spectra as an integer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">wavelength</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">measured</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">y</span><span class="p">))</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cubic_spline</span> <span class="o">=</span> <span class="n">CubicSpline</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">interp</span> <span class="o">=</span> <span class="n">cubic_spline</span><span class="p">(</span><span class="n">wavelength</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">extrapolate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">interp</span> <span class="o">-</span> <span class="n">measured</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">offset</span>
+
+
+<div class="viewcode-block" id="compute_discontinuity_offset">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.compute_discontinuity_offset">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                 <span class="n">wavelength</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                 <span class="n">disc_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                                 <span class="n">wavelength_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the discontinuity offset for a measured coefficient.</span>
+
+<span class="sd">    :param measured: Absorption or attenuation coefficient.</span>
+<span class="sd">    :param wavelength: The wavelengths of the absorption or attenuation spectra.</span>
+<span class="sd">    :param disc_idx: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    :param wavelength_dim: The name of the wavelength dimension if inputting an xarray DataArray.</span>
+<span class="sd">    :return: The discontinuity offset of the absorption and attenuation spectra as a float.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">disc_off</span> <span class="o">=</span> <span class="n">_compute_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">disc_off</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span><span class="n">_compute_discontinuity_offset</span><span class="p">,</span> <span class="n">measured</span><span class="p">,</span>
+                                  <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;wavelength&#39;</span><span class="p">:</span> <span class="n">measured</span><span class="p">[</span><span class="n">wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="s1">&#39;disc_idx&#39;</span><span class="p">:</span> <span class="n">disc_idx</span><span class="p">},</span>
+                                  <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="n">wavelength_dim</span><span class="p">]],</span>
+                                  <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[]],</span>
+                                  <span class="n">vectorize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+        <span class="n">disc_off</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">measured</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">disc_off</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;wavelength_dimension&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wavelength_dim</span>
+        <span class="n">disc_off</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;discontinuity_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">disc_idx</span>
+    <span class="k">return</span> <span class="n">disc_off</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_apply_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                                <span class="n">disc_off</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                                <span class="n">disc_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a discontinuity offset to a measured coefficient.</span>
+<span class="sd">    Note: This function is not vectorized. The input measured array is copied to prevent memory conflicts.</span>
+
+<span class="sd">    :param measured: Measured absorption or attenuation coefficient.</span>
+<span class="sd">    :param disc_off: The discontinuity offset of the absorption and attenuation spectra.</span>
+<span class="sd">    :param disc_idx: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    :return: The spectrum with the offset applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_measured</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">measured</span><span class="p">)</span>
+    <span class="n">_measured</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">_measured</span><span class="p">[</span><span class="n">disc_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">disc_off</span>
+    <span class="k">return</span> <span class="n">_measured</span>
+
+
+<div class="viewcode-block" id="apply_discontinuity_offset">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.apply_discontinuity_offset">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                               <span class="n">disc_off</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                               <span class="n">disc_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">wavelength_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a discontinuity offset to a measured coefficient. Vectorized version of _apply_discontinuity_offset, where</span>
+<span class="sd">    applicable.</span>
+
+<span class="sd">    :param measured: Measured absorption or attenuation coefficient.</span>
+<span class="sd">    :param disc_off: The discontinuity offset of the absorption and attenuation spectra.</span>
+<span class="sd">    :param disc_idx: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    :param wavelength_dim: The name of the wavelength dimension if inputting an xarray DataArray.</span>
+<span class="sd">    :return: The spectrum with the offset applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">disc_applied</span> <span class="o">=</span> <span class="n">_apply_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">disc_off</span><span class="p">,</span> <span class="n">disc_idx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">disc_applied</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span><span class="n">_apply_discontinuity_offset</span><span class="p">,</span> <span class="n">measured</span><span class="p">,</span> <span class="n">disc_off</span><span class="p">,</span>
+                                      <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;disc_idx&#39;</span><span class="p">:</span> <span class="n">disc_idx</span><span class="p">},</span>
+                                      <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="n">wavelength_dim</span><span class="p">],</span> <span class="p">[]],</span>
+                                      <span class="n">output_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="n">wavelength_dim</span><span class="p">]],</span>
+                                      <span class="n">vectorize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+        <span class="n">disc_applied</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">measured</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">disc_applied</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;wavelength_dimension&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">wavelength_dim</span>
+        <span class="n">disc_applied</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;discontinuity_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">disc_idx</span>
+        <span class="n">disc_applied</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;discontinuity_offset_applied&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span>
+    <span class="k">return</span> <span class="n">disc_applied</span></div>
+
+
+
+<div class="viewcode-block" id="discontinuity_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.discontinuity_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">discontinuity_correction</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                             <span class="n">discontinuity_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                             <span class="n">wavelength_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the discontinuity offset and apply it to the measured coefficient.</span>
+<span class="sd">    NOTE: This function only works with xarray DataArrays.</span>
+
+<span class="sd">    :param measured: The measured absorption or attenuation coefficient.</span>
+<span class="sd">    :param discontinuity_index: The index of the discontinuity in the absorption and attenuation spectra.</span>
+<span class="sd">    :param wavelength_dim: The wavelength dimension of the measured coefficient if inputting an xarray DataArray.</span>
+<span class="sd">    :return: A tuple of xr.DataArrays (corrected measured coefficient, offset)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">disc_offset</span> <span class="o">=</span> <span class="n">compute_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">measured</span><span class="p">[</span><span class="n">wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                               <span class="n">discontinuity_index</span><span class="p">,</span> <span class="n">wavelength_dim</span><span class="p">)</span>
+    <span class="n">disc_applied</span> <span class="o">=</span> <span class="n">apply_discontinuity_offset</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">disc_offset</span><span class="p">,</span>
+                                              <span class="n">discontinuity_index</span><span class="p">,</span> <span class="n">wavelength_dim</span><span class="p">)</span>
+
+    <span class="n">disc_applied</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;discontinuity_corrected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;True&#39;</span>
+    <span class="k">return</span> <span class="n">disc_applied</span><span class="p">,</span> <span class="n">disc_offset</span></div>
+
+
+
+<div class="viewcode-block" id="ts_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.ts_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">ts_correction</span><span class="p">(</span><span class="n">measured</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                  <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                  <span class="n">salinity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                  <span class="n">psi_temperature</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                  <span class="n">psi_salinity</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                  <span class="n">tcal</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Correct the measured absorption or attenuation coefficient for temperature and salinity.</span>
+<span class="sd">    This function works on singletons and xarray DataArrays.</span>
+
+<span class="sd">    :param measured: The measured absorption or attenuation coefficient.</span>
+<span class="sd">    :param temperature: The temperature of the water in degrees Celsius.</span>
+<span class="sd">    :param salinity: The salinity of the water in PSU.</span>
+<span class="sd">    :param psi_temperature: The temperature coefficients from ACSTSCor,</span>
+<span class="sd">        subset by wavelength equivalent to the corresponding measured coefficient wavelengths.</span>
+<span class="sd">    :param psi_salinity: The temperature coefficients from ACSTSCor,</span>
+<span class="sd">        subset by wavelength equivalent to the corresponding measured coefficient wavelengths.</span>
+<span class="sd">    :param tcal: The tcal value from the device file.</span>
+<span class="sd">    :return: TS-corrected absorption or attenuation coefficient in m^-1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">measured</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">temperature</span> <span class="o">-</span> <span class="n">tcal</span>
+        <span class="n">psi_t</span> <span class="o">=</span> <span class="n">psi_temperature</span>
+        <span class="n">psi_s</span> <span class="o">=</span> <span class="n">psi_salinity</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">salinity</span>
+        <span class="n">mts</span> <span class="o">=</span> <span class="n">measured</span> <span class="o">-</span> <span class="p">((</span><span class="n">psi_t</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">psi_s</span> <span class="o">*</span> <span class="n">s</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dt</span><span class="p">,</span> <span class="n">psi_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">temperature</span> <span class="o">-</span> <span class="n">tcal</span><span class="p">,</span> <span class="n">psi_temperature</span><span class="p">)</span>
+        <span class="n">s</span><span class="p">,</span> <span class="n">psi_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">salinity</span><span class="p">,</span> <span class="n">psi_salinity</span><span class="p">)</span>
+        <span class="n">mts</span> <span class="o">=</span> <span class="n">measured</span> <span class="o">-</span> <span class="p">((</span><span class="n">psi_t</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dt</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">psi_s</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">s</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+        <span class="n">mts</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">measured</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">temperature</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">salinity</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">psi_temperature</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="n">psi_salinity</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">mts</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;tcal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tcal</span>
+    <span class="k">return</span> <span class="n">mts</span></div>
+
+
+
+<div class="viewcode-block" id="zero_shift_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.zero_shift_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">zero_shift_correction</span><span class="p">(</span><span class="n">mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shift values between [-0.005, 0] to 0. This function works both for 1D arrays and xarray DataArrays.</span>
+
+<span class="sd">    :param mts: The TS-corrected absorption or attenuation coefficient</span>
+<span class="sd">    :return: The shifted TS-corrected absorption or attenuation coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mts</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="n">mts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="mf">0.005</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">mts</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mts</span> <span class="o">=</span> <span class="n">mts</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">mts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mts</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="mf">0.005</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Assign attributes if output is an xr.DataArray.</span>
+        <span class="n">mts</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;zero_shifted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;True&quot;</span>
+    <span class="k">return</span> <span class="n">mts</span></div>
+
+
+
+<div class="viewcode-block" id="interpolate_common_wavelengths">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.interpolate_common_wavelengths">[docs]</a>
+<span class="k">def</span> <span class="nf">interpolate_common_wavelengths</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
+                                   <span class="n">a_wavelength_dim</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a_wavelength&#39;</span><span class="p">,</span>
+                                   <span class="n">c_wavelength_dim</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;c_wavelength&#39;</span><span class="p">,</span>
+                                   <span class="n">new_wavelength_dim</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;wavelength&#39;</span><span class="p">,</span>
+                                   <span class="n">wavelength_range</span><span class="p">:</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;infer&#39;</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function interpolates the absorption and attenuation spectra to a common wavelength range and step size.</span>
+<span class="sd">    Only works on xarray Datasets.</span>
+<span class="sd">    Applies interpolation to all variables on the a_wavelength and c_wavelength dimensions.</span>
+
+<span class="sd">    :param ds: The input dataset with two wavelength dimensions, one for absorption and the other for attenuation.</span>
+<span class="sd">    :param a_wavelength_dim: The name of the absorption wavelength dimension.</span>
+<span class="sd">    :param c_wavelength_dim: The name of the attenuation wavelength dimension.</span>
+<span class="sd">    :param new_wavelength_dim: The name of the new wavelength dimension to be created.</span>
+<span class="sd">        Default is &#39;wavelength&#39;, which is the recommended name for the common wavelength dimension.</span>
+<span class="sd">    :param wavelength_range: The wavelength range to interpolate along.</span>
+<span class="sd">        Default is &#39;infer&#39;, which will use the minimums and maximums of the absorption and attenuation wavelengths to</span>
+<span class="sd">        identify a common range for both channels.</span>
+<span class="sd">    :param step: The wavelength step size to interpolate to. Default is 1 nm.</span>
+<span class="sd">    :return: A dataset interpolated to the common wavelength range and step size. If there are variables that you do not</span>
+<span class="sd">        want to interpolate along (e.g. a_signal, a_reference, c_signal, c_reference), it is recommended that you subset</span>
+<span class="sd">        before interpolation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">wavelength_range</span> <span class="o">==</span> <span class="s1">&#39;infer&#39;</span><span class="p">:</span>
+        <span class="n">min_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">a_wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ds</span><span class="p">[</span><span class="n">c_wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>  <span class="c1"># Max of a and c wvl mins.</span>
+        <span class="n">max_wvl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">a_wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ds</span><span class="p">[</span><span class="n">c_wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>  <span class="c1"># Min of a and c wvl maxs.</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">min_wvl</span><span class="p">,</span> <span class="n">max_wvl</span> <span class="o">=</span> <span class="n">wavelength_range</span>
+    <span class="n">wvls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">min_wvl</span><span class="p">,</span> <span class="n">max_wvl</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+    <span class="n">cds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">interp</span><span class="p">({</span><span class="n">a_wavelength_dim</span><span class="p">:</span> <span class="n">wvls</span><span class="p">,</span> <span class="n">c_wavelength_dim</span><span class="p">:</span> <span class="n">wvls</span><span class="p">})</span>  <span class="c1"># Interpolate to step size.</span>
+    <span class="n">cds</span> <span class="o">=</span> <span class="n">cds</span><span class="o">.</span><span class="n">reset_index</span><span class="p">([</span><span class="n">a_wavelength_dim</span><span class="p">,</span>
+                           <span class="n">c_wavelength_dim</span><span class="p">],</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span><span class="n">wavelength</span><span class="o">=</span><span class="n">wvls</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">a_wavelength_dim</span><span class="p">:</span> <span class="n">new_wavelength_dim</span><span class="p">,</span>
+         <span class="n">c_wavelength_dim</span><span class="p">:</span> <span class="n">new_wavelength_dim</span><span class="p">})</span>
+
+    <span class="n">cds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;wavelength_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">min_wvl</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">max_wvl</span><span class="p">)]</span>
+    <span class="n">cds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;interpolation_step&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+    <span class="k">return</span> <span class="n">cds</span></div>
+
+
+
+<div class="viewcode-block" id="baseline_scattering_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.baseline_scattering_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">baseline_scattering_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                   <span class="n">reference_a</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform baseline scattering correction on the absorption coefficient.</span>
+<span class="sd">    This is the baseline method from Zaneveld et al. (1994).</span>
+
+<span class="sd">    :param a_mts: The TS-corrected absorption coefficient across all wavelengths.</span>
+<span class="sd">    :param reference_a: The TS-corrected absorption coefficient at a reference wavelength.</span>
+<span class="sd">    :return: The baseline scattering-corrected absorption coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">scatcorr</span> <span class="o">=</span> <span class="n">a_mts</span> <span class="o">-</span> <span class="n">reference_a</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scatcorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>  <span class="c1"># Assign attributes if output is an xarray.DataArray.</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_mts</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Baseline, Zaneveld et al. (1994)&#39;</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://doi.org/10.1117/12.190095&#39;</span>
+    <span class="k">return</span> <span class="n">scatcorr</span></div>
+
+
+
+<div class="viewcode-block" id="fixed_scattering_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.fixed_scattering_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">fixed_scattering_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                <span class="n">c_mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.14</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform fixed scattering correction on the absorption coefficient.</span>
+<span class="sd">    This is the fixed correction method from Pegau et al. 2003.</span>
+
+<span class="sd">    :param a_mts: TS-corrected absorption.</span>
+<span class="sd">    :param c_mts: TS-corrected attenuation.</span>
+<span class="sd">    :param epsilon: A default value of 0.14 is used for biological particle dominant waters.</span>
+<span class="sd">        A value of 0.18 is recommended for waters dominated by sediments.</span>
+<span class="sd">    :return: Fixed scattering corrected absorption coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">scatcorr</span> <span class="o">=</span> <span class="n">a_mts</span> <span class="o">-</span> <span class="n">epsilon</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_mts</span> <span class="o">-</span> <span class="n">a_mts</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scatcorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>  <span class="c1"># Assign attributes if output is an xarray.DataArray.</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">a_mts</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">c_mts</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;epsilon&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Fixed, Pegau et al. (2003)&#39;</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;https://ntrs.nasa.gov/api/citations/&#39;</span>
+                                                              <span class="s1">&#39;20030093642/downloads/20030093642.pdf&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scatcorr</span></div>
+
+
+
+<div class="viewcode-block" id="proportional_scattering_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.proportional_scattering_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">proportional_scattering_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                       <span class="n">c_mts</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                       <span class="n">reference_a</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                       <span class="n">reference_c</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform proportional scattering correction on the absorption coefficient.</span>
+<span class="sd">    This is the proportional method from Zaneveld et al. (1994).</span>
+
+<span class="sd">    :param a_mts: TS-corrected absorption.</span>
+<span class="sd">    :param c_mts: TS-corrected attenuation.</span>
+<span class="sd">    :param reference_a: The TS-corrected absorption coefficient at a reference wavelength. Historically 715nm.</span>
+<span class="sd">    :param reference_c: The TS-corrected attenuation coefficient at a reference wavelength.  Historically 715nm.</span>
+<span class="sd">    :return: Proportional scattering corrected absorption coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">scatcorr</span> <span class="o">=</span> <span class="n">a_mts</span> <span class="o">-</span> <span class="p">((</span><span class="n">reference_a</span> <span class="o">/</span> <span class="p">(</span><span class="n">reference_c</span> <span class="o">-</span> <span class="n">reference_a</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">c_mts</span> <span class="o">-</span> <span class="n">a_mts</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scatcorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>  <span class="c1"># Assign attributes if output is an xarray.DataArray.</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">a_mts</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">c_mts</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Proportional, Zaneveld et al. (1994)&#39;</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://doi.org/10.1117/12.190095&#39;</span>
+    <span class="k">return</span> <span class="n">scatcorr</span></div>
+
+
+
+<div class="viewcode-block" id="baseline_plus_scattering_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.baseline_plus_scattering_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">baseline_plus_scattering_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                        <span class="n">a_mts_715</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform baseline plus scattering correction for the absorption coefficient.</span>
+<span class="sd">    This method originates from Rottgers et al. (2013). https://doi.org/10.1016/j.mio.2013.11.001</span>
+<span class="sd">    True absorption at 715nm is empirically determined in Equation 5.</span>
+
+<span class="sd">    :param a_mts: The TS-corrected absorption coefficient.</span>
+<span class="sd">    :param a_mts_715: The absorption at the reference wavelength. Historically, 715nm is used.</span>
+<span class="sd">    :return: Baseline plus scattering corrected absorption coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">true_a_715</span> <span class="o">=</span> <span class="mf">0.212</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">a_mts_715</span><span class="p">,</span> <span class="mf">1.135</span><span class="p">)</span>  <span class="c1"># Equation 5 from Rottgers et al. (2013)</span>
+    <span class="n">scatcorr</span> <span class="o">=</span> <span class="n">a_mts</span> <span class="o">-</span> <span class="p">(</span><span class="n">a_mts_715</span> <span class="o">-</span> <span class="n">true_a_715</span><span class="p">)</span>  <span class="c1"># Equation 3 from Rottgers et al. (2013)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scatcorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>  <span class="c1"># Assign attributes if output is an xarray.DataArray.</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_mts</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Baseline+, Rottgers et al. (2013)&#39;</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://doi.org/10.1016/j.mio.2013.11.001&#39;</span>
+    <span class="k">return</span> <span class="n">scatcorr</span></div>
+
+
+
+<div class="viewcode-block" id="proportional_plus_scattering_correction">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.proportional_plus_scattering_correction">[docs]</a>
+<span class="k">def</span> <span class="nf">proportional_plus_scattering_correction</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                            <span class="n">c_mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                            <span class="n">a_mts_715</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                            <span class="n">c_mts_715</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
+                                            <span class="n">e_c</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.56</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform proportional plus scattering correction for the absorption coefficient.</span>
+<span class="sd">    This method originates from Rottgers et al. (2013). https://doi.org/10.1016/j.mio.2013.11.001</span>
+<span class="sd">    True absorption at 715nm is empirically determined in Equation 5.  The value e_c represents attenuation correction.</span>
+
+<span class="sd">    This function only works with xarray DataArrays that share a common &#39;wavelength&#39; dimension, thus the dataset</span>
+<span class="sd">    must be linearly interpolated to a common wavelength range and bin size.</span>
+
+<span class="sd">    :param a_mts: The TS-corrected absorption coefficient.</span>
+<span class="sd">    :param c_mts: The TS-corrected attenuation coefficient.</span>
+<span class="sd">    :param a_mts_715: The absorption at the reference wavelength. Historically, 715nm is used.</span>
+<span class="sd">    :param c_mts_715: The attenuation at the reference wavelength. Historically, 715nm is used.</span>
+<span class="sd">    :param e_c: The attenuation correction factor. Normally it is 1 (no attenuation correction),</span>
+<span class="sd">        but Rottgers et al. (2013) suggest a value of 0.56 when running wavelength independent correction (which this</span>
+<span class="sd">        function does).</span>
+<span class="sd">    :return: Proportional plus scattering corrected absorption coefficient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">true_a_715</span> <span class="o">=</span> <span class="mf">0.212</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">a_mts_715</span><span class="p">,</span> <span class="mf">1.135</span><span class="p">)</span>  <span class="c1"># EQ5 from Rottgers et al. (2013)</span>
+    <span class="n">scatcorr</span> <span class="o">=</span> <span class="n">a_mts</span> <span class="o">-</span> <span class="p">(</span><span class="n">a_mts_715</span> <span class="o">-</span> <span class="n">true_a_715</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="p">((</span><span class="mi">1</span> <span class="o">/</span> <span class="n">e_c</span><span class="p">)</span> <span class="o">*</span> <span class="n">c_mts</span> <span class="o">-</span> <span class="n">a_mts</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">1</span> <span class="o">/</span> <span class="n">e_c</span><span class="p">)</span> <span class="o">*</span> <span class="n">c_mts_715</span> <span class="o">-</span> <span class="n">true_a_715</span><span class="p">))</span>  <span class="c1"># EQ4</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scatcorr</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>  <span class="c1"># Assign attributes if output is an xarray.DataArray.</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;ancillary_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_mts</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">c_mts</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;reference_wavelength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">715</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Proportional+, Rottgers et al. (2013)&#39;</span>
+        <span class="n">scatcorr</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;scattering_correction_method_doi&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;https://doi.org/10.1016/j.mio.2013.11.001&#39;</span>
+    <span class="k">return</span> <span class="n">scatcorr</span></div>
+
+
+
+<span class="c1"># ----------- Experimental and Untested Functions ----------- #</span>
+
+<span class="k">def</span> <span class="nf">_estimate_reference_wavelength_index</span><span class="p">(</span><span class="n">a_spectra</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the index of the reference wavelength of an absorption spectra. This function finds the first</span>
+<span class="sd">    wavelength in the last 1/5 wavelength bins that is greater than and nearest to zero.</span>
+<span class="sd">    If the entire spectra is NaN, then a wvl_idx of NaN is returned.</span>
+
+<span class="sd">    :param a_spectra: A 1D array of absorption spectra.</span>
+<span class="sd">    :return: The index of the reference wavelength.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_wvls</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a_spectra</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">num_wvls</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">999</span>
+    <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">a_spectra</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">999</span>
+    <span class="n">len_non_reds</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">a_spectra</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">num_wvls</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">5</span><span class="p">)])</span>
+    <span class="n">reds</span> <span class="o">=</span> <span class="n">a_spectra</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">num_wvls</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">5</span><span class="p">):]</span>
+    <span class="n">reds_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">reds</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">reds</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">reds_pos</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">999</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reds_wvl_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanargmin</span><span class="p">(</span><span class="n">reds_pos</span><span class="p">)</span>
+        <span class="n">wvl_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">len_non_reds</span> <span class="o">+</span> <span class="n">reds_wvl_idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wvl_idx</span>
+
+
+<div class="viewcode-block" id="estimate_reference_wavelength">
+<a class="viewcode-back" href="../../acspype.html#acspype.processing.estimate_reference_wavelength">[docs]</a>
+<span class="k">def</span> <span class="nf">estimate_reference_wavelength</span><span class="p">(</span><span class="n">a_mts</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span> <span class="n">wavelength_dim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate a reference wavelength for an ND absorption dataset.</span>
+<span class="sd">    The index closest to zero in the last 1/5 of each spectrum sample is determined. The index with the most repeats</span>
+<span class="sd">    across the dataset estimated to be the reference wavelength.</span>
+
+<span class="sd">    :param a_mts: TS-corrected absorption coefficient.</span>
+<span class="sd">    :param wavelength_dim: The wavelength dimension name for a_mts.</span>
+<span class="sd">    :return: The reference wavelength in nm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wvl_idxs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">apply_ufunc</span><span class="p">(</span><span class="n">_estimate_reference_wavelength_index</span><span class="p">,</span>
+                              <span class="n">a_mts</span><span class="p">,</span>
+                              <span class="n">input_core_dims</span><span class="o">=</span><span class="p">[[</span><span class="n">wavelength_dim</span><span class="p">]],</span>
+                              <span class="n">vectorize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">wvl_idxs</span> <span class="o">=</span> <span class="n">wvl_idxs</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">wvl_idxs</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">999</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Drop bad estimations.</span>
+    <span class="n">idxs</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">wvl_idxs</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">wvl_idx</span> <span class="o">=</span> <span class="n">idxs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmax</span><span class="p">(</span><span class="n">counts</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">wvl_idx</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No reference wavelength found. Please check the input spectra.&#39;</span><span class="p">)</span>
+    <span class="n">wvl</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">a_mts</span><span class="p">[</span><span class="n">wavelength_dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">wvl_idx</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">wvl</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
