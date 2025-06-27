@@ -318,7 +318,7 @@ def apply_discontinuity_offset(measured: NDArray[float] | xr.DataArray,
         disc_applied.attrs['ancillary_variables'] = measured.name
         disc_applied.attrs['wavelength_dimension'] = wavelength_dim
         disc_applied.attrs['discontinuity_index'] = disc_idx
-        disc_applied.attrs['discontinuity_offset_applied'] = True
+        disc_applied.attrs['discontinuity_offset_applied'] = 'True'
     return disc_applied
 
 
@@ -340,7 +340,7 @@ def discontinuity_correction(measured: xr.DataArray,
     disc_applied = apply_discontinuity_offset(measured, disc_offset,
                                               discontinuity_index, wavelength_dim)
 
-    disc_applied.attrs['discontinuity_corrected'] = True
+    disc_applied.attrs['discontinuity_corrected'] = 'True'
     return disc_applied, disc_offset
 
 
@@ -398,7 +398,7 @@ def zero_shift_correction(mts: NDArray[float] | xr.DataArray) -> NDArray[float] 
         mts = mts.where((mts > 0) | (mts <= -0.005), 0)
 
         # Assign attributes if output is an xr.DataArray.
-        mts.attrs['zero_shifted'] = True
+        mts.attrs['zero_shifted'] = "True"
     return mts
 
 

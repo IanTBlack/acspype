@@ -82,12 +82,18 @@ def reformat_ooi_optaa(ds: xr.Dataset) -> xr.Dataset:
               'c_reference_counts': 'c_reference',
               'suspect_timestamp': 'suspect_timestamp',
               'sea_water_temperature': 'sea_water_temperature'}
+
+
     for key, value in mapper.items():
         try:
             nds = nds.rename({key: value})
             nds[value].attrs = ds[key].attrs
         except:
             continue
+
+    qvars = [v for v in ds.data_vars if 'qartod' in v]
+    for qvar in qvars:
+        nds[qvar] = ds[qvar]
 
     # Update elapsed_time if it arrives with units of seconds.
     if nds.elapsed_time.attrs['units'] == 's':

@@ -164,6 +164,7 @@ uv.lock
 
 dev_tools/test_files/shimada_202405_subset.nc
 dev_tools/figures/
+dev_tools/.t.yml
 examples/ooi_data/
 examples/_scratch/
 examples/_scratch

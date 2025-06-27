@@ -1,6 +1,6 @@
 [project]
 name = "acspype"
-version = "0.3.2"
+version = "0.3.3"
 description = "A Python package for serial data acquisition and advanced processing for the Sea-Bird Scientific ACS."
 authors = [
     {name = "Ian Black", email = "iantimothyblack@gmail.com"},
