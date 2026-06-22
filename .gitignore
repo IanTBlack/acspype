@@ -165,3 +165,4 @@ figures/  # Used for creating manuscript figures.
 examples/ooi_data/ # Used to store data from OOI download examples.
 _scratch/
 deployment*.nc
+scratch.ipynb

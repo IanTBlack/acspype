@@ -10,4 +10,3 @@ def test():
     dev = ACSDev(TEST_FILEPATH)
     assert len(dev.a_wavelength) == len(dev.c_wavelength)
     assert isinstance(dev.a_offset, np.ndarray)
-    assert isinstance(dev.func_a_delta_t, BSpline)

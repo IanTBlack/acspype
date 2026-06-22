@@ -202,24 +202,25 @@ def _build_acpype_dev_obj(response_data, start) -> object:
 
         # func_a_delta_t = interpolate.interp1d(cal_data['tbins'], cal_data['a_delta_t'], axis=1)
         # func_c_delta_t = interpolate.interp1d(cal_data['tbins'], cal_data['c_delta_t'], axis=1)
+
         func_a_delta_t = make_interp_spline(cal_data['tbins'], cal_data['a_delta_t'], k=1, axis=1)
         func_c_delta_t = make_interp_spline(cal_data['tbins'], cal_data['c_delta_t'], k=1, axis=1)
 
     return Dev
 
 
-def get_ooi_optaa_cal(ds: xr.Dataset) -> object:
+def get_ooi_optaa_dev(ds_min_time: xr.DataArray, attrs: xr.Dataset) -> object:
     """
-    Find an OOI OPTAA calibration for a given dataset.
+    Find OOI OPTAA device file data for a given dataset.
 
-    :param ds: The OOI OPTAA dataset. It must contain data from a single deployment.
-        It is recommended to not change the format of the file until after running this function.
+    :param ds_min_time: The minimum time of the dataset.
+    :param attrs: The dataset attributes.
     :return: A ACSDev-like object containing the calibration data.
     """
 
-    start = pd.to_datetime(ds.time.min().values)
+    start = pd.to_datetime(ds_min_time.values)
     asset_url = 'https://ooinet.oceanobservatories.org/api/m2m/12587/asset'
-    params = {'uid': ds.attrs['AssetUniqueID']}
+    params = {'uid': attrs['AssetUniqueID']}
     response = requests.get(asset_url, params=params)
     if response.status_code == requests.codes.ok:
         if 'aintenance' in response.text:  # Check for (m)aintenance message
