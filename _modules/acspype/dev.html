@@ -1,0 +1,471 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acspype.dev &mdash; acspype 0.3.9 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=65b26183"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            acspype
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme_link.html">acspype README</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../acspype.html">acspype code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html">Processing Equations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#processing-and-qaqc">Processing and QAQC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#recommended-naming-conventions">Recommended Naming Conventions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../other_docs.html#reference-material">Reference Material</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">acspype</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">acspype.dev</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for acspype.dev</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains functions and classes for parsing and accessing data from ACS .dev files.</span>
+<span class="sd">Currently, only structure version 3 is supported.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">dateutil</span> <span class="kn">import</span> <span class="n">parser</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="c1"># from scipy.interpolate import make_interp_spline</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">interp1d</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">NUM_PAT</span>
+
+
+<div class="viewcode-block" id="ACSDev">
+<a class="viewcode-back" href="../../acspype.html#acspype.dev.ACSDev">[docs]</a>
+<span class="k">class</span> <span class="nc">ACSDev</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for parsing ACS .dev files and putting them into a format that is easier to work with for larger or</span>
+<span class="sd">    multiple file datasets.</span>
+
+<span class="sd">    Generally, users will not call individual functions, but rather use the class to obtain attributes, which are</span>
+<span class="sd">    created at class instantiation or convert the data to an xarray dataset using the to_xarray function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the following functions at instantiation to parse the .dev file and store the info as class attributes.</span>
+
+<span class="sd">        :param filepath: The filepath to the .dev file.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span> <span class="o">=</span> <span class="n">filepath</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__read_dev</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__parse_metadata</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__parse_tbins</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__parse_offsets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__build_interp_funcs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_parse</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__read_dev</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Import the .dev file as a text file.</span>
+<span class="sd">        The file contents are stored as a list of strings in the class attribute self._content.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="o">=</span> <span class="n">_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__parse_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the .dev file for individual sensor metadata.</span>
+<span class="sd">        Sensor specific metadata are stored as class attributes.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">metadata_lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="k">if</span> <span class="s2">&quot;C and A offset&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">metadata_lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;ACS Meter&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sensor_type</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;(.*?)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s2">&quot;Serial&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sn_hexdec</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;(.*?)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span> <span class="o">=</span> <span class="s2">&quot;ACS-&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sn_hexdec</span><span class="p">[</span><span class="o">-</span><span class="mi">6</span><span class="p">:],</span> <span class="mi">16</span><span class="p">))</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s2">&quot;structure version&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">structure_version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s2">&quot;tcal&quot;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">or</span> <span class="s2">&quot;Tcal&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tcal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ical</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[:=]</span><span class="se">\\</span><span class="s2">s?(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\\</span><span class="s2">s?&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">tcal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ical</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s?(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                    <span class="p">][:</span><span class="mi">2</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="s2">&quot;file&quot;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s2">&quot;on&quot;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s2">&quot;files&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s+file</span><span class="se">\\</span><span class="s2">s+on</span><span class="se">\\</span><span class="s2">s?(.*?)[.</span><span class="se">\\</span><span class="s2">s</span><span class="se">\\</span><span class="s2">n]&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span>
+                        <span class="mi">0</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">&quot;files&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span>
+                        <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s+file[s]?</span><span class="se">\\</span><span class="s2">s+on</span><span class="se">\\</span><span class="s2">s?(.*?)[.</span><span class="se">\\</span><span class="s2">s</span><span class="se">\\</span><span class="s2">n]&quot;</span><span class="p">,</span> <span class="n">line</span>
+                    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s2">&quot;file&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s2">&quot;on&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s+on</span><span class="se">\\</span><span class="s2">s?(.*?)[.</span><span class="se">\\</span><span class="s2">s</span><span class="se">\\</span><span class="s2">n]&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span>
+                        <span class="mi">0</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s2">&quot;file&quot;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s2">&quot;on&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">s+file</span><span class="se">\\</span><span class="s2">s?(.*?)[.</span><span class="se">\\</span><span class="s2">s</span><span class="se">\\</span><span class="s2">n]&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span>
+                        <span class="mi">0</span>
+                    <span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">cal_date_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">cal_date_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">cal_date_str</span> <span class="o">=</span> <span class="n">cal_date_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cal_date</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">cal_date_str</span><span class="p">)</span>
+                <span class="c1"># try:  # Sometimes the file date is entered as yyyy or yy. This should handle both cases.</span>
+                <span class="c1">#     self.cal_date = datetime.strptime(cal_date_str, &#39;%m/%d/%Y&#39;).strftime(&#39;%Y-%m-%d&#39;)</span>
+                <span class="c1"># except:</span>
+                <span class="c1">#     self.cal_date = datetime.strptime(cal_date_str, &#39;%m/%d/%y&#39;).strftime(&#39;%Y-%m-%d&#39;)</span>
+            <span class="k">elif</span> <span class="s2">&quot;Depth calibration&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">depth_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth_scale_factor</span><span class="p">)</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="k">elif</span> <span class="s2">&quot;Baud&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">baudrate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s2">&quot;Path&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">path_length</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s2">&quot;wavelengths&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">num_wavelength</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s2">&quot;number of temperature bins&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">num_tbin</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="s2">&quot;maxANoise&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_a_noise</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_c_noise</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_a_nonconform</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_c_nonconform</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_a_difference</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_c_difference</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">min_a_counts</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">min_c_counts</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">min_r_counts</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_temp_sd</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">max_depth_sd</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">NUM_PAT</span><span class="si">}</span><span class="s2">)</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">__parse_tbins</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the .dev file for temperature bin information.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">tbin_line</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="k">if</span> <span class="s2">&quot;; temperature bins&quot;</span> <span class="ow">in</span> <span class="n">line</span>
+            <span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">tbin_line</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="k">if</span> <span class="s2">&quot;;</span><span class="se">\t</span><span class="s2">temperature</span><span class="se">\t</span><span class="s2">bins&quot;</span> <span class="ow">in</span> <span class="n">line</span>
+            <span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">tbins</span> <span class="o">=</span> <span class="n">tbin_line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">tbins</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="n">v</span><span class="p">]</span>  <span class="c1"># Toss empty strings.</span>
+        <span class="n">tbins</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">]</span>  <span class="c1"># Toss newline characters.</span>
+        <span class="n">tbins</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;;&quot;</span><span class="p">]</span>  <span class="c1"># Toss newline characters.</span>
+        <span class="n">tbins</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;temperature&quot;</span><span class="p">]</span>  <span class="c1"># Toss newline characters.</span>
+        <span class="n">tbins</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s2">&quot;bins&quot;</span><span class="p">]</span>  <span class="c1"># Toss newline characters.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tbin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tbins</span> <span class="k">if</span> <span class="s2">&quot;temperature bins&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+        <span class="p">)</span>  <span class="c1"># Convert to float.</span>
+
+    <span class="k">def</span> <span class="nf">__parse_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the .dev file for a and c offsets. Data are saved as class attributes for access at a later time.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">offset_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="k">if</span> <span class="s2">&quot;C and A offset&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">offset_lines</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># That means someone used tabs instead of spaces.</span>
+            <span class="n">offset_lines</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_content</span> <span class="k">if</span> <span class="s2">&quot;offset&quot;</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s2">&quot;cal&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span>
+            <span class="p">]</span>
+
+        <span class="c1"># Create holder arrays to loop over and append data to.</span>
+        <span class="n">c_wvls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">a_wvls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">c_offs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">a_offs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">c_deltas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">a_deltas</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">wavelength_color_schemes</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">offset_lines</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">offsets</span><span class="p">,</span> <span class="n">c_delta</span><span class="p">,</span> <span class="n">a_delta</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">c_wvl</span><span class="p">,</span> <span class="n">a_wvl</span><span class="p">,</span> <span class="n">wvl_color</span><span class="p">,</span> <span class="n">c_off</span><span class="p">,</span> <span class="n">a_off</span> <span class="o">=</span> <span class="n">offsets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">offsets</span><span class="p">,</span> <span class="n">deltas</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="n">offsets</span><span class="p">,</span> <span class="n">deltas</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">c_wvl</span><span class="p">,</span> <span class="n">a_wvl</span><span class="p">,</span> <span class="n">wvl_color</span><span class="p">,</span> <span class="n">c_off</span><span class="p">,</span> <span class="n">a_off</span> <span class="o">=</span> <span class="n">offsets</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">deltas_list</span> <span class="o">=</span> <span class="n">deltas</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">c_delta</span> <span class="o">=</span> <span class="n">deltas_list</span><span class="p">[:</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deltas_list</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)]</span>
+                    <span class="n">a_delta</span> <span class="o">=</span> <span class="n">deltas_list</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">deltas_list</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="p">:]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sep</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">c_wvl</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">a_wvl</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">wvl_color</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                    <span class="n">c_off</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                    <span class="n">a_off</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+                    <span class="n">c_delta</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">5</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">)]</span>
+                    <span class="n">a_delta</span> <span class="o">=</span> <span class="n">sep</span><span class="p">[</span><span class="mi">5</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">)</span> <span class="p">:</span> <span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">)]</span>
+
+                    <span class="c1"># Convert strings to proper pythonic datatypes.</span>
+            <span class="n">c_wvl</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">c_wvl</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">a_wvl</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">a_wvl</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+            <span class="n">c_off</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">c_off</span><span class="p">)</span>
+            <span class="n">a_off</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">a_off</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a_delta</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c_delta</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">c_delta</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">c_delta</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)]</span>
+                <span class="n">a_delta</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">a_delta</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a_delta</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c_delta</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">c_delta</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">c_delta</span>
+                    <span class="k">if</span> <span class="n">v</span>
+                    <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+                        <span class="s2">&quot;;&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;C&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;and&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+                        <span class="s1">&#39;&quot;offset,&quot;&#39;</span><span class="p">,</span>
+                        <span class="s2">&quot;temperature&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;correction&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;info</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">]</span>
+                <span class="n">a_delta</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">a_delta</span>
+                    <span class="k">if</span> <span class="n">v</span>
+                    <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span>
+                        <span class="s2">&quot;;&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;C&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;and&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;A&quot;</span><span class="p">,</span>
+                        <span class="s1">&#39;&quot;offset,&quot;&#39;</span><span class="p">,</span>
+                        <span class="s2">&quot;temperature&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;correction&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;info</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="p">]</span>
+                <span class="p">]</span>
+
+            <span class="c1"># Append files to holder arrays.</span>
+            <span class="n">c_wvls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_wvl</span><span class="p">)</span>
+            <span class="n">a_wvls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_wvl</span><span class="p">)</span>
+            <span class="n">c_offs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_off</span><span class="p">)</span>
+            <span class="n">a_offs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_off</span><span class="p">)</span>
+            <span class="n">c_deltas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c_delta</span><span class="p">)</span>
+            <span class="n">a_deltas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a_delta</span><span class="p">)</span>
+            <span class="n">wavelength_color_schemes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wvl_color</span><span class="p">)</span>
+
+        <span class="c1"># Convert holder arrays to numpy arrays.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c_wvls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a_wvls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c_offs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a_offs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c_delta_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">c_deltas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">a_delta_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a_deltas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_color_schemes</span> <span class="o">=</span> <span class="n">wavelength_color_schemes</span>
+
+    <span class="k">def</span> <span class="nf">__build_interp_funcs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build interpolation functions for the a and c delta_t values and store as class attributes.</span>
+
+<span class="sd">        Note: In SciPy v 1.15.0, scipy.interpolate.interp1d has become legacy and it is recommended that other code</span>
+<span class="sd">        be used. 1st degree make_interp_spline has been implemented as a replacement. Technically, legacy code is not</span>
+<span class="sd">        considered deprecated, so users could overwrite the function class attributes with interp1d if preferred.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_a_delta_t</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_delta_t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_c_delta_t</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_delta_t</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_t_interp_method</span> <span class="o">=</span> <span class="s2">&quot;scipy.interpolate.interp1d&quot;</span>
+
+        <span class="c1"># self.func_a_delta_t = make_interp_spline(self.tbin, self.a_delta_t, k=1, axis=1)</span>
+        <span class="c1"># self.func_c_delta_t = make_interp_spline(self.tbin, self.c_delta_t, k=1, axis=1)</span>
+        <span class="c1"># self.delta_t_interp_method = &#39;scipy.interpolate.make_interp_spline&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__check_parse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verify that the shape of the data is as expected.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wavelength</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch between number of wavelengths extracted for A and expected from file.&quot;</span>
+                <span class="s2">&quot;Please verify the .dev file integrity.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wavelength</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch between number of wavelengths extracted for C and expected from file.&quot;</span>
+                <span class="s2">&quot;Please verify the .dev file integrity.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch between number of wavelengths extracted for A and C.&quot;</span>
+                <span class="s2">&quot;Please verify the .dev file integrity.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_delta_t</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tbin</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch between length of A wavelengths and number of temperature bins.&quot;</span>
+                <span class="s2">&quot;Please verify the .dev file integrity.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_delta_t</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tbin</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Mismatch between length of C wavelengths and number of temperature bins.&quot;</span>
+                <span class="s2">&quot;Please verify the .dev file integrity.&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="ACSDev.to_xarray">
+<a class="viewcode-back" href="../../acspype.html#acspype.dev.ACSDev.to_xarray">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert the parsed .dev file files to an xarray dataset</span>
+
+<span class="sd">        :return: An appropriately dimensioned xarray dataset containing device file files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">assign_coords</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;a_wavelength&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_wavelength</span><span class="p">,</span>
+                <span class="s2">&quot;c_wavelength&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_wavelength</span><span class="p">,</span>
+                <span class="s2">&quot;temperature_bin&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tbin</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;a_offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;a_wavelength&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_offset</span><span class="p">)</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;a_delta_t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;a_wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature_bin&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">a_delta_t</span><span class="p">)</span>
+
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;c_offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;c_wavelength&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">c_offset</span><span class="p">))</span>
+        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;c_delta_t&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;c_wavelength&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature_bin&quot;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_delta_t</span><span class="p">)</span>
+
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;device_filepath&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filepath</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;sensor_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sensor_type</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;serial_number_hexdec&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sn_hexdec</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;serial_number&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;device_file_structure_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure_version</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;tcal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tcal</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;ical&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ical</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;calibration_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cal_date</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;depth_offset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth_offset</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;depth_scale_factor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth_scale_factor</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;baudrate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">baudrate</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;path_length&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_length</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;number_of_wavelength_bins&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_wavelength</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;number_of_temperature_bins&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_tbin</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_a_noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_a_noise</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_c_noise&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_c_noise</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_a_nonconform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_a_nonconform</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_c_nonconform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_c_nonconform</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_a_difference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_a_difference</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_c_difference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_c_difference</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;min_a_counts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_a_counts</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;min_c_counts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_c_counts</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;min_r_counts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_r_counts</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_temp_sd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_temp_sd</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;max_depth_sd&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_depth_sd</span>
+        <span class="k">return</span> <span class="n">ds</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Ian Black, Thor Black.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
