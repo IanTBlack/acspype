@@ -36,8 +36,8 @@ class ACSDev:
         self.__parse_metadata()
         self.__parse_tbins()
         self.__parse_offsets()
-        # self.__build_interp_funcs()
-        # self.__check_parse()
+        self.__build_interp_funcs()
+        self.__check_parse()
 
     def __read_dev(self) -> None:
         """

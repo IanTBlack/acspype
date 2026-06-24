@@ -166,3 +166,5 @@ examples/ooi_data/ # Used to store data from OOI download examples.
 _scratch/
 deployment*.nc
 scratch.ipynb
+__scratch.ipynb
+_scratch.ipynb

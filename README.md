@@ -1,5 +1,7 @@
 # acspype README
 
+You can read the manuscript accompanying this software in [DIY Oceanography](https://tos.org/oceanography/article/acspype-an-open-source-python-package-for-ac-s-data-acquisition-and-processing).
+
 ![](https://github.com/IanTBlack/acspype/blob/main/dev_tools/_images/ooi_optaa_nsif.jpg?raw=true)
 *Image from work supported by the U.S. National Science Foundation Ocean Observatories Initiative.*
 
